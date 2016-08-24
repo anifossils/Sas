@@ -1,0 +1,732 @@
+
+/*start: proc code list is updated on June 03, 2016 to include Radiation/splenectomy : list sent in ppt by Hemanth on June 02, 2016 */
+Proc Import datafile='\\192.168.1.19\sas-apld\APLD_Projects\13177_MF\Optum_Data\Documents\Interim\Optum_Truven_MF_proc_cd_rad_splen.csv'
+out=input.Rediation_Splec_Proc_Cd dbms=csv replace; 
+getnames=yes;
+run;
+
+
+Data input.MF_PROC_CD_SA_VERSION_new;
+	set input.MF_PROC_CD_SA_VERSION
+		input.Rediation_Splec_Proc_Cd;
+run;
+
+proc sort data=input.MF_PROC_CD_SA_VERSION_new nodupkey;
+by proc_cd;
+run;
+/*this file will be used in Regimen analysis code*/
+
+*End: proc code list is updated */
+
+
+/* Start: code copied from 3. Index date and LB - Only for us....*/
+*;
+
+data input.JAK_NDC_SA_VERSION;
+   infile datalines truncover;
+   input NDC $ 1-11 Drug $ 13-23 Type $ 25-28;
+   datalines;
+50881000560 ruxolitinib Oral
+50881001001 ruxolitinib Oral
+50881001060 ruxolitinib Oral
+50881001560 ruxolitinib Oral
+50881002060 ruxolitinib Oral
+50881002560 ruxolitinib Oral
+;
+run;
+
+%macro jakafi(file_name, drug_dt);
+proc sql;
+create table DRUG_&file_name. as
+	select a.PTID, a.&drug_dt. as drug_dt format = date7.,
+	b.drug as generic_name, "&file_name." as file format $10. length=10  
+	from input.&file_name. as a, input.JAK_NDC_SA_VERSION as b
+	where a.NDC = b.NDC;
+quit;
+%mend;
+%jakafi(RXCLAIMS, FILL_DT);
+%jakafi(MEDCLAIMS, FST_DT);
+%jakafi(RXWRITTEN, RXDATE);
+%jakafi(MEDADMIN, ORDER_DATE);
+%jakafi(PRO, REPORTED_DATE);
+
+/*DRUG_R*/  
+PROC SQL;
+   CREATE TABLE DRUG_R AS 
+   SELECT t1.PTID, 
+          t1.NOTE_DATE as drug_dt format =date7., 
+          t1.DRUG_NAME as  generic_name, 'DRUG_R' as file        
+      FROM input.DRUG_R t1
+      WHERE t1.DRUG_NAME CONTAINS 'RUXOLITINIB' OR t1.DRUG_NAME CONTAINS 'JAKAFI';
+QUIT;
+data DRUG_R;
+	set DRUG_R;
+	if generic_name="JAKAFI" then generic_name="ruxolitinib";
+	generic_name=lowcase(generic_name);
+run;
+
+/*COMBINE ALL DRUG DATA*/
+data INTER.DRUG_JAK;
+	set 
+	DRUG_MEDADMIN(Drop=generic_name)
+	DRUG_MEDCLAIMS(Drop=generic_name)
+	DRUG_PRO(Drop=generic_name)
+	DRUG_RXCLAIMS(Drop=generic_name)
+	DRUG_RXWRITTEN(Drop=generic_name)
+	DRUG_R(Drop=generic_name)
+	;
+	format file $ 10.;
+	file='DRUGS';
+run;
+
+proc sort data = INTER.DRUG_JAK out = DRUG_JAK2 nodupkey;
+by ptid drug_dt;
+run;
+
+/*MINIMUM DRUG DATE*/
+data INDEX_DRUG_JAK;
+	set DRUG_JAK2(rename=(drug_dt=min_drug_dt));
+	by ptid;
+	if first.ptid;
+run;
+
+/*INDEX DIAGNOSIS DATE*/
+proc sort data=input.DIAGNOSIS out=PMF_DIAG (keep= ptid DIAG_DATE) nodupkey;
+	by ptid DIAG_DATE;
+	where DIAGNOSIS_CD eq "23876";
+run;
+
+data INDEX_PMF_DIAG (rename=(DIAG_DATE=index_diag_dt));
+	set PMF_DIAG;
+	by ptid DIAG_DATE;
+	format file $ 10.;
+	file='DIAGNOSIS';
+	if first.ptid;
+run;
+
+/*MINIMUM DIAGNOSIS DATE MEDCLAIMS AND INPATIENT*/
+proc sort data=input.MEDCLAIMS out=PMF_MEDCLAIM
+	(keep= ptid FST_DT rename=(FST_DT=diag_date)) nodupkey;
+	by ptid FST_DT;
+	where DIAG1 eq "23876" or DIAG2 eq "23876" or DIAG3 eq "23876" or DIAG4 eq "23876" or DIAG5 eq "23876";
+run;
+
+proc sort data=input.INPATIENT out=PMF_INPATIENT
+	(keep= ptid ADMIT_DATE rename=(ADMIT_DATE=diag_date)) nodupkey;
+	by ptid ADMIT_DATE;
+	where DIAG1 eq "23876" or DIAG2 eq "23876" or DIAG3 eq "23876" or DIAG4 eq "23876" or DIAG5 eq "23876";
+run;
+	
+data INDEX_PMF_MEDC_INPAT (rename=(diag_date=min_diag_dt));
+	set
+		PMF_MEDCLAIM
+		PMF_INPATIENT
+	;
+	by ptid diag_date;
+	format file $ 10.;
+	file='MEDC_INPAT';
+	if first.ptid;
+run;
+
+/*INDEX DISEASE DATE*/
+data INTER.INDEX_ALL (rename=(claim_dt=index_dis_dt));
+	set
+		INDEX_PMF_DIAG (rename=(index_diag_dt=claim_dt))
+		INDEX_PMF_MEDC_INPAT (rename=(min_diag_dt=claim_dt))
+		INDEX_DRUG_JAK (rename=(min_drug_dt=claim_dt));
+	by ptid claim_dt;
+	if first.ptid;
+run;
+
+/*IDENTIFICATION OF FIRST ACTIVE DATE*/
+%macro min_dt(file, date);
+proc sql;
+	create table &file. as
+	select PTID, min(&date.) as min_dt format = date7.
+	from input.&file.
+	group by ptid;
+quit;
+%mend;
+
+%min_dt(DIAGNOSIS, DIAG_DATE);
+%min_dt(DRUG_R, NOTE_DATE);
+%min_dt(INPATIENT,ADMIT_DATE );
+%min_dt(LAB_R,FST_DT );
+%min_dt(MEASUREMENT,NOTE_DATE );
+%min_dt(MEDADMIN,ORDER_DATE);
+%min_dt(MEDCLAIMS,FST_DT );
+%min_dt(OBSERVE,OBS_DATE );
+%min_dt(PRO,REPORTED_DATE);
+%min_dt(PROCEDURE,PROC_DATE );
+%min_dt(RXWRITTEN,RXDATE );
+%min_dt(RXCLAIMS,FILL_DT );
+%min_dt(VISIT, VISIT_START_DATE);
+
+/*IMPUTATION FOR FIRST_MONTH_ACTIVE OF PATIENT DATASET*/
+/*Conserding only 18+ years patients*/
+
+data PATIENT1(keep=ptid act_dt );
+	set input.PATIENT;
+	format act_dt date9.;
+	act_dt=mdy(mod(FIRST_MONTH_ACTIVE,100),01,floor(FIRST_MONTH_ACTIVE/100));
+run;
+
+proc sql;
+	create table PATIENT as
+	select PTID, min(act_dt) as min_dt format = date7.
+	from PATIENT1
+	group by ptid;
+quit;
+/*FINDING MINIMUM DATE AFTER REMOVING MISSING DATA*/
+data LABS1;
+	set input.LABS;
+	if COLLECTED_DATE ne .;
+run;
+proc sql;
+	create table LABS as
+	select PTID, min(COLLECTED_DATE) as min_dt format = date7.
+	from LABS1
+	group by ptid;
+quit;
+
+data min_all;
+	set 
+		VISIT
+		DIAGNOSIS
+		DRUG_R
+		INPATIENT
+		LAB_R
+		LABS
+		MEASUREMENT
+		MEDADMIN
+		MEDCLAIMS
+		OBSERVE
+		PRO
+		PROCEDURE
+		RXCLAIMS
+		RXWRITTEN
+		PATIENT
+	;
+run;
+proc sort;
+by ptid min_dt;
+run;
+
+data INTER.FIRST_ACT_DT(rename=(min_dt=first_act_dt));
+	set min_all;
+	by ptid min_dt;
+	if first.ptid;
+run;
+
+/*LOOKBACK PERIOD ANALYSIS*/
+data INTER.LOOKBACK_PMF;
+	merge INTER.INDEX_ALL (in=a) INTER.FIRST_ACT_DT(in=b);
+ 	by ptid;
+	if a;
+	diff_d=sum(index_dis_dt,-1*first_act_dt);
+	diff_month=round(diff_d/30,1);
+	format group $10.;
+	if diff_d lt 0 then group="<0";
+	else if diff_d le 180 then group="0-180";
+	else if diff_d le 360 then group="181-360";
+	else group="360+";
+	format index_dis_dt date7.;
+run;
+
+
+/*SMF INDEX DATE IDENTIFICATION*/
+
+/*INDEX DIAGNOSIS DATE*/
+proc sql;
+	create table INDEX_SMF_DIAG as
+	select A.ptid, min(A.diag_date) as index_diag_dt format date7.,
+	'DIAGNOSIS' as file format $10. length= 10
+	from input.DIAGNOSIS as A
+	where A.diagnosis_cd='28983'
+	group by A.ptid
+	order by ptid;
+quit;
+
+/*MINIMUM CLAIM DATE FROM MEDCLAIMS AND INPATIENT*/
+proc sort data=input.MEDCLAIMS out=SMF_MEDCLAIM
+	(keep= ptid FST_DT rename=(FST_DT=diag_date)) nodupkey;
+	by ptid FST_DT;
+	where DIAG1 eq "28983" or DIAG2 eq "28983" or DIAG3 eq "28983" or DIAG4 eq "28983" or DIAG5 eq "28983";
+run;
+
+proc sort data=input.INPATIENT out=SMF_INPATIENT
+	(keep= ptid ADMIT_DATE rename=(ADMIT_DATE=diag_date)) nodupkey;
+	by ptid ADMIT_DATE;
+	where DIAG1 eq "28983" or DIAG2 eq "28983" or DIAG3 eq "28983" or DIAG4 eq "28983" or DIAG5 eq "28983";
+run;
+	
+data INDEX_SMF_MEDC_INPAT (rename=(diag_date=min_diag_dt));
+	set
+		SMF_MEDCLAIM
+		SMF_INPATIENT	;
+	by ptid diag_date;
+	format file $ 10.;
+	file='MEDC_INPAT';
+	if first.ptid;
+run;
+
+/*INDEX DISEASE DATE - SMF*/
+data INTER.INDEX_ALL_SMF (rename=(claim_dt=index_dis_dt));
+	set
+	INDEX_SMF_DIAG (rename=(index_diag_dt=claim_dt))
+	INDEX_SMF_MEDC_INPAT (rename=(min_diag_dt=claim_dt));
+		by ptid claim_dt;
+		if first.ptid;
+run;
+
+proc sql;
+	create table PV_priorSMF as
+	select A.ptid, A.diagnosis_cd, max(A.diag_date) as PV_last_diag_dt format date7.,
+	B.index_dis_dt format date7.
+	from INTER.INDEX_ALL_SMF as B left join input.DIAGNOSIS as A
+	on A.ptid=B.ptid
+	where A.diagnosis_cd='2384' and A.diag_date le B.index_dis_dt
+	group by A.ptid, A.diagnosis_cd, B.index_dis_dt
+	order by ptid;
+quit;
+
+proc sql;
+	create table ET_priorSMF as
+	select A.ptid, A.diagnosis_cd, max(A.diag_date) as ET_last_diag_dt format date7.,
+	B.index_dis_dt format date7.
+	from INTER.INDEX_ALL_SMF as B left join input.DIAGNOSIS as A
+	on A.ptid=B.ptid
+	where A.diagnosis_cd='23871' and A.diag_date le B.index_dis_dt
+	group by A.ptid, A.diagnosis_cd, B.index_dis_dt
+	order by ptid;
+quit;
+
+data prior_SMF_ET_PV;
+	retain ptid index_dis_dt PV_last_diag_dt ET_last_diag_dt;
+	merge	INTER.INDEX_ALL_SMF 
+			PV_priorSMF(drop=diagnosis_cd)
+			ET_priorSMF(drop=diagnosis_cd);
+	by ptid;
+	PV_to_SMF = (index_dis_dt - PV_last_diag_dt);
+	ET_to_SMF = index_dis_dt - ET_last_diag_dt;
+/*	flag=1;*/
+run;
+/**/
+/*proc export data=INTER.prior_SMF_ET_PV*/
+/*  outfile= "G:\Project\13177_MF\Temporary analysis\prior_SMF_ET_PV.csv"*/
+/*  dbms=csv*/
+/*  replace;*/
+/*run;*/
+
+/* End: code copied from 3. Index date and LB - Only for us....*/
+
+
+
+/* Start: code copied from 3.1 Index date and LB - Only for us....*/
+
+/*INDEX PMF DATE*/
+data inter.INDEX_PMF_ALL (rename=(claim_dt=index_PMF_dt));
+	set
+	INDEX_PMF_DIAG (rename=(index_diag_dt=claim_dt))
+	INDEX_PMF_MEDC_INPAT (rename=(min_diag_dt=claim_dt));
+	by ptid claim_dt;
+	if first.ptid;
+run;
+
+proc sql;
+	create table PATIENT1 as
+	select PTID , birth_yr
+	from input.PATIENT
+	order by ptid, birth_yr;
+quit;
+
+data PATIENT ;
+	set PATIENT1;
+	by ptid birth_yr;
+	if first.ptid;
+run;
+
+/*INDEX DATE- On the basis of diagnosis in DIAGNOSIS, MEDCLAIM, INPATIENT and DRUGS datasets*/
+data INDEX_ALL1 (drop= file);
+	retain PTID min_index_dt type index_PMF_dt index_SMF_dt min_drug_dt first_act_dt
+	diff_d diff_month group;
+	merge
+		INTER.INDEX_PMF_ALL
+		INTER.INDEX_ALL_SMF(rename=(index_dis_dt=index_SMF_dt))
+		INDEX_DRUG_JAK
+		INTER.FIRST_ACT_DT
+		PATIENT;
+	by ptid;
+	format index_PMF_dt index_SMF_dt min_drug_dt min_index_dt date7.;
+	length type $10. group $10.;
+
+	if index_PMF_dt eq . and index_SMF_dt eq . then
+		do; 
+			min_index_dt = min_drug_dt ;
+			type = "PMF";
+		end; 
+	else if index_PMF_dt eq . and index_SMF_dt ne . then
+		do;	
+			min_index_dt = index_SMF_dt ;
+			type = "SMF";
+		end;
+
+	else if index_PMF_dt ne . and index_SMF_dt eq . then
+		do;	
+			min_index_dt = index_PMF_dt ;
+			type = "PMF";
+		end;
+	else
+		do;
+			if index_PMF_dt le index_SMF_dt then
+				do;
+					min_index_dt=index_PMF_dt;
+					type = "PMF";
+				end;
+			else
+				do;
+					min_index_dt=index_SMF_dt;
+					type = "SMF";
+				end;
+		end;
+	diff_d=sum(min_index_dt,-1*first_act_dt);
+	diff_month=round(diff_d/30,1);
+	if diff_d lt 0 then group="<0";
+	else if diff_d le 90 then group="0-90";
+	else group="90+";
+run;
+
+data INTER.INDEX_ALL (drop=birth_yr birth_yr1);
+	set INDEX_ALL1;
+	if birth_yr="1930 and Earlier" then birth_yr1="1930"; else birth_yr1=birth_yr;
+	if birth_yr1="1930" then Age=sum(year(min_index_dt),-1*1930);
+	else Age=sum(year(min_index_dt),-1*birth_yr1);
+	if age ge 0 and  age lt 18 then age_group="under 18 years";
+	else if age ge 18 and age lt 50 then age_group="18-50 years";
+	else if age ge 50 and age lt 65 then age_group="50-65 years";
+	else age_group="65 or more years";
+	*if age gt 18;
+run;
+
+proc freq data= INTER.INDEX_ALL ;
+table group*age_group*type / nopercent nocol norow;
+run;
+
+data MEDC_INPAT1 ;
+	set input.MEDCLAIMS(keep=ptid FST_DT Diag1 diag2 diag3 diag4 diag5  rename=(FST_DT=diag_date))
+		input.INPATIENT(keep=ptid ADMIT_DATE Diag1 diag2 diag3 diag4 diag5 rename=(ADMIT_DATE=diag_date));
+run;
+
+proc sort data=MEDC_INPAT1 out=MEDC_INPAT2 nodupkey;
+by ptid diag_date Diag1 diag2 diag3 diag4 diag5;
+run;
+
+proc transpose data=MEDC_INPAT2 
+			   out=MEDC_INPAT3  (keep=ptid diag_date col1 rename=(col1=diagnosis_cd));* prefix = Code_;
+	by ptid diag_date Diag1 diag2 diag3 diag4 diag5;
+	var Diag1 diag2 diag3 diag4 diag5 ;
+run;
+
+data diag_all ;
+	set input.diagnosis (keep= ptid diagnosis_cd diag_date)
+		MEDC_INPAT3;
+run;
+
+proc sort data=diag_all out=inter.diag_all nodupkey;
+by ptid diag_date diagnosis_cd;
+run;
+
+/* End: code copied from 3.1 Index date and LB - Only for us....*/
+
+
+/* Start: code prior history of PV/ET */
+
+/*Prior PV or Prior ET SMF- PV or ET in 2 YEARS PRIOR TO SMF INDEX DATE*/
+proc sql;
+	create table INTER.PRIOR_PV_SMF as
+	select A.ptid, A.diagnosis_cd, max(A.diag_date) as PV_last_diag_dt format date7.,
+	B.min_index_dt format date7., B.first_act_dt format date7., B.group, b.age_group
+	from INTER.INDEX_ALL as B left join INTER.DIAG_ALL as A
+	on A.ptid=B.ptid
+	where A.diagnosis_cd='2384'
+/*		and B.min_index_dt-A.diag_date between 1 and 730*/
+		and B.min_index_dt-A.diag_date gt 0
+		and B.type="SMF"
+/*		and B.ptid not in (select distinct ptid from INTER2.PRIOR_SMF_DIAGNOSIS_FREQ)*/
+/*		and B.group="360+"*/
+/*		and B.group="90+"*/
+/*		and B.age_group ne "under 18 years"*/
+	group by A.ptid, A.diagnosis_cd, B.min_index_dt, B.first_act_dt, B.group, b.age_group
+	order by ptid;
+quit;
+
+proc sql;
+	create table INTER.PRIOR_ET_SMF as
+	select A.ptid, A.diagnosis_cd, max(A.diag_date) as ET_last_diag_dt format date7.,
+	B.min_index_dt format date7., B.first_act_dt format date7., B.group, b.age_group
+	from INTER.INDEX_ALL as B left join INTER.DIAG_ALL as A
+	on A.ptid=B.ptid
+	where A.diagnosis_cd='23871'
+/*		and B.min_index_dt-A.diag_date between 1 and 730*/
+and B.min_index_dt-A.diag_date gt 0
+and B.type="SMF"
+/*		and B.ptid not in (select distinct ptid from INTER2.PRIOR_SMF_DIAGNOSIS_FREQ)*/
+/*		and B.group="360+"*/
+/*and B.group="90+"*/
+/*	and B.age_group ne "under 18 years"*/
+group by A.ptid, A.diagnosis_cd, B.min_index_dt, B.first_act_dt, B.group, b.age_group
+	order by ptid;
+quit;
+
+data INTER.INDEX_ALL_SMF;
+	set INTER.INDEX_ALL;
+	where type="SMF";
+/*		and group="360+";*/
+/*		and group="90+"*/
+/*		and age_group ne "under 18 years";*/
+run;
+
+data INTER.PRIOR_PV_ET_SMF;
+	retain ptid min_index_dt PV_last_diag_dt ET_last_diag_dt PV_to_SMF ET_to_SMF group;
+	merge	INTER.INDEX_ALL_SMF (keep=ptid min_index_dt first_act_dt group age_group )
+			INTER.PRIOR_PV_SMF(drop=diagnosis_cd)
+			INTER.PRIOR_ET_SMF(drop=diagnosis_cd);
+	by ptid;
+	PV_to_SMF = min_index_dt - PV_last_diag_dt;
+	ET_to_SMF = min_index_dt - ET_last_diag_dt;
+	if PV_to_SMF eq . then do;
+		if ET_to_SMF eq . then flag=4;
+		else flag =2;
+		end;
+	else do;
+	if ET_to_SMF eq . then flag=1;
+		else flag =3;
+	end;
+	if flag in (1:3) then type = 3;
+	if flag eq 4  then type = 4;
+/*Flag 1= PV Only*/
+/*Flag 2= ET Only*/
+/*Flag 3= both PV and ET*/
+/*Flag 4= None*/
+/*Type 1= PMF - (No Prior history of PV/ET)*/
+/*Type 2= POST PV/ET PMF */
+/*Type 3= POST PV/ET SMF*/
+/*Type 4= SMF - No Prior history of PV/ET)*/
+run;
+
+/*Checking PV or ET diagnosois prior to PMF - 23 Nov, 2015*/
+/*Prior PV or Prior ET, PMF- PV or ET in 90 Days PRIOR TO PMF INDEX DATE*/
+
+proc sql;
+	create table INTER.PRIOR_PV_PMF as
+	select A.ptid, A.diagnosis_cd, max(A.diag_date) as PV_last_diag_dt format date7.,
+	B.min_index_dt format date7.,B.first_act_dt, B.group, b.age_group
+	from INTER.INDEX_ALL as B left join INTER.DIAG_ALL as A
+	on A.ptid=B.ptid
+	where A.diagnosis_cd='2384'
+		and B.min_index_dt-A.diag_date gt 0
+		and B.type="PMF"
+/*		and B.group="90+"*/
+/*		and B.age_group ne "under 18 years"*/
+	group by A.ptid, A.diagnosis_cd, B.min_index_dt, B.first_act_dt, B.group, b.age_group
+	order by ptid;
+quit;
+
+proc sql;
+	create table INTER.PRIOR_ET_PMF as
+	select A.ptid, A.diagnosis_cd, max(A.diag_date) as ET_last_diag_dt format date7.,
+	B.min_index_dt format date7.,B.first_act_dt, B.group, b.age_group
+	from INTER.INDEX_ALL as B left join INTER.DIAG_ALL as A
+	on A.ptid=B.ptid
+	where A.diagnosis_cd='23871'
+		and B.min_index_dt-A.diag_date gt 0
+		and B.type="PMF"
+/*		and B.group="90+"*/
+/*		and B.age_group ne "under 18 years"*/
+	group by A.ptid, A.diagnosis_cd, B.min_index_dt, B.first_act_dt, B.group, b.age_group
+	order by ptid;
+quit;
+
+data INTER.INDEX_ALL_PMF;
+	set INTER.INDEX_ALL;
+	where type="PMF";
+/*		and group="90+"*/
+/*		and age_group ne "under 18 years";*/
+run;
+
+data INTER.PRIOR_PV_ET_PMF;
+	retain ptid min_index_dt PV_last_diag_dt ET_last_diag_dt PV_to_PMF ET_to_PMF group;
+	merge	INTER.INDEX_ALL_PMF (keep=ptid min_index_dt first_act_dt group age_group)
+			INTER.PRIOR_PV_PMF(drop=diagnosis_cd)
+			INTER.PRIOR_ET_PMF(drop=diagnosis_cd);
+	by ptid;
+	PV_to_PMF = min_index_dt - PV_last_diag_dt;
+	ET_to_PMF = min_index_dt - ET_last_diag_dt;
+	if PV_to_PMF eq . then do;
+		if ET_to_PMF eq . then flag=4;
+		else flag =2;
+		end;
+	else do;
+	if ET_to_PMF eq . then flag=1;
+		else flag =3;
+	end;
+	if flag in (1:3) then type = 2;
+	if flag eq 4  then type = 1;
+/*Flag 1= PV Only*/
+/*Flag 2= ET Only*/
+/*Flag 3= both PV and ET*/
+/*Flag 4= None*/
+
+/*Type 1= PMF - (No Prior history of PV/ET)*/
+/*Type 2= POST PV/ET PMF */
+/*Type 3= POST PV/ET SMF*/
+/*Type 4= SMF - No Prior history of PV/ET)*/
+run;
+
+data INTER.all_tagged_pat (keep=ptid min_index_dt first_act_dt type group age_group);
+	set INTER.PRIOR_PV_ET_PMF
+		INTER.PRIOR_PV_ET_SMF;
+run;
+
+/*diagnosis history of patients who are not eligible for either PMF or SMF*/
+/*Eligible patient*/
+proc sql;
+	create table diag_primary as
+	select A.ptid, A.diag_date format date7., A.diagnosis_cd
+	from INTER2.DIAG_ALL as A
+	where substr(A.diagnosis_cd,1,3) in (select ICD9_cancer from input.CANCER_icd9);
+quit;
+			
+/*TRT_1			*/
+/*TRT_2			*/
+/*TRT_3			*/
+/*PLATE_NEAR_MF_DATE			*/
+/*PLATE_NEAR_MF			*/
+/*PLATE_MF_days			*/
+/*PLATE_to_MF_flg			*/
+/*SPLEN_IND			*/
+/*SPLEN_NEAR_MF_DATE			*/
+/*SPLEN_MF_days			*/
+/*SPLEN_to_MF_flg			*/
+
+/*Type 1= PMF - (No Prior history of PV/ET)*/
+/*Type 2= POST PV/ET PMF */
+/*Type 3= POST PV/ET SMF*/
+/*Type 4= SMF - No Prior history of PV/ET)*/
+
+
+proc format;
+value type 1='PRIMARY'
+			2='POST'
+			3='POST'
+			4='OTHER';
+run;
+
+data index (drop=type group age_group);
+	set INTER.all_tagged_pat (keep=ptid min_index_dt type group age_group);
+	if group ne "90+" or age_group eq "under 18 years" then delete;
+	format PRIMARY_INDEX_DATE POST_INDEX_DATE OTHER_INDEX_DATE date7.;
+	MF_TYPE_IND = put(type, type.);
+	if type eq 1 then PRIMARY_INDEX_DATE=min_index_dt;
+	if type in (2,3) then POST_INDEX_DATE=min_index_dt;
+	if type eq 4 then OTHER_INDEX_DATE=min_index_dt;
+	rename ptid=PATIENT_ID min_index_dt=Index_MF_date;
+run;
+
+proc sort data=index;
+by PATIENT_ID;
+run;
+
+data age;
+SET INTER.INDEX_ALL(keep=ptid age);
+where age ge 18;
+rename ptid=PATIENT_ID age=Age_MF_Diagnosis;
+run;
+
+proc sort data=input.patient(keep=ptid gender) out=gender (rename=(ptid=PATIENT_ID)) nodupkey;
+by ptid;
+run;
+
+data platelet(keep=PATIENT_ID PLATE_NEAR_MF_DATE PLATE_NEAR_MF PLATE_MF_days PLATE_NEAR_MF_CAT  PLATE_to_MF_flg ) ;
+	set platelet_all2;
+	format type type. category $6.;
+	by ptid;
+	if first.ptid;
+	if type in (2:3) then type =2;
+	if result lt 50 then category ='<50';
+	else if result ge 50 and result le 75 then category='50~75';
+	else if result ge 76 and result le 100 then category='75~100';
+	else category ='>100';
+	PLATE_MF_days=intck('days',min_index_dt,test_date);
+	if PLATE_MF_days gt 0 then PLATE_to_MF_flg ="After";
+	else if PLATE_MF_days lt 0 then PLATE_to_MF_flg ="Prior";
+	else if PLATE_MF_days eq 0 then  PLATE_to_MF_flg ="SAME";
+	rename category=PLATE_NEAR_MF_CAT type=MF_TYPE_IND result=PLATE_NEAR_MF 
+    test_date=PLATE_NEAR_MF_DATE ptid=PATIENT_ID;
+run;
+
+data Query_2a_splenomegaly ;
+	merge all_tagged_pat (in=a drop= first_act_dt) 
+		 DIAG_ALL (in=b);
+	by ptid;
+	if a and b;
+	if DIAGNOSIS_CD eq "7892"
+		and group eq "90+"
+		and age_group ne "under 18 years"
+		and DIAG_DATE - 90 <= min_index_dt <= DIAG_DATE +90 ; 
+		* Need to check if we need to update the +/- 90 days criteria;
+		if type in (2,3) then type=2;
+run;
+
+data splenomegaly(keep=PATIENT_ID SPLEN_NEAR_MF_DATE SPLEN_MF_days SPLEN_to_MF_flg);
+	set Query_2a_splenomegaly ;
+	by ptid min_index_dt;
+	if first.ptid;
+	SPLEN_MF_days=intck('days',min_index_dt,diag_date);
+	if SPLEN_MF_days gt 0 then SPLEN_to_MF_flg ="After";
+	else if SPLEN_MF_days lt 0 then SPLEN_to_MF_flg ="Prior";
+	else if SPLEN_MF_days eq 0 then  SPLEN_to_MF_flg ="SAME";
+	rename ptid=PATIENT_ID diag_date=SPLEN_NEAR_MF_DATE ;
+run;
+
+/*Death Date Imputation*/
+Proc sql;
+create table death_patient as select distinct ptid,date_of_death
+from input.patient;
+quit;
+Data date_exact(keep=patient_id death_date);
+set death_patient;
+format death_date date7.;
+if date_of_death=. then death_date = .;
+if mod(input(substr(put(date_of_death,$6.),1,4),4.),400)= 0 
+and input(substr(put(date_of_death,$6.),5,6),2.)=02 then 
+death_date=mdy(02,29,input(substr(put(date_of_death,$6.),1,4),4.));
+else if mod(input(substr(put(date_of_death,$6.),1,4),4.),4)=0 
+and input(substr(put(date_of_death,$6.),5,6),2.)=02 then 
+death_date=mdy(02,29,input(substr(put(date_of_death,$6.),1,4),4.));
+else if 
+input(substr(put(date_of_death,$6.),5,6),2.)in (01,03,05,07,08,10,12) then 
+death_date=
+mdy(input(substr(put(date_of_death,$6.),5,6),2.),31,input(substr(put(date_of_death,$6.),1,4),4.));
+else if 
+input(substr(put(date_of_death,$6.),5,6),2.)in (04,06,09,11) then 
+death_date=
+mdy(input(substr(put(date_of_death,$6.),5,6),2.),30,input(substr(put(date_of_death,$6.),1,4),4.));
+else if
+input(substr(put(date_of_death,$6.),5,6),2.)=02 then 
+death_date=
+mdy(input(substr(put(date_of_death,$6.),5,6),2.),28,input(substr(put(date_of_death,$6.),1,4),4.));
+rename ptid=patient_id;
+run;
+
+data mf_optum_data;
+	merge index(in=a) age gender platelet splenomegaly date_exact
+    inter.last_ACT_DT(rename=(ptid=patient_id)) inter.study_end(rename=(ptid=patient_id)) ;
+	by patient_id;
+	if a;
+	if SPLEN_MF_days=. then SPLEN_IND =0;
+	else SPLEN_IND = 1;
+	DBMS='OPTUM';
+	rename last_ACT_DT=last_claim_dt;
+run;
+
