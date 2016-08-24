@@ -1,0 +1,1014 @@
+/*Keeping all drug data in to Regim library*/
+
+/*Procedure file*//*MF_PROC_CD_SA_VERSION - File contains Splenectomy and radiation*/
+proc sql;
+create table inter.PROC_PROCEDURE as
+select a.PTID, a.PROC_DATE as drug_dt format = date7., b.drug as generic_name format $50. length=50,
+		b.type format $10. length=10, "PROCEDURE" as file format $15. length=15
+from input.PROCEDURE as a, input.MF_PROC_CD_SA_VERSION_new as b
+where a.proc_code = b.proc_cd;
+quit;
+
+
+/*Medical claims file*/
+proc sql;
+create table inter.PROC_MEDCLAIMS as
+select a.PTID, a.FST_DT as drug_dt format = date7., b.drug as generic_name format $50. length=50,
+		b.type format $10. length=10, "MEDCLAIMS" as file format $15. length=15
+from input.MEDCLAIMS as a, input.MF_PROC_CD_SA_VERSION_new as b
+where a.PROC_CD = b.proc_cd;
+quit;
+
+%macro fetch_drugs(file_name, drug_dt);
+proc sql;
+create table inter.DRUG_&file_name. as
+	select a.PTID, a.&drug_dt. as drug_dt format = date7.,
+	b.drug as generic_name format $50. length=50, b.type format $10. length=10,
+	"&file_name." as file format $15. length=15
+	from input.&file_name. as a, input.MF_NDC_SA_VERSION as b
+	where a.NDC = b.NDC;
+quit;
+%mend;
+
+%fetch_drugs(MEDCLAIMS_PAD, FST_DT);
+%fetch_drugs(MEDADMIN_PAD, ORDER_DATE);
+%fetch_drugs(PRO_PAD, REPORTED_DATE);
+
+%macro fetch_drugs(file_name, drug_dt, dayssup);
+proc sql;
+create table input.DRUG_&file_name. as
+	select a.PTID, a.&drug_dt. as drug_dt format = date7.,
+	b.drug as generic_name format $50. length=50, b.type format $10. length=10,
+	a.&dayssup. as dayssup, "&file_name." as file format $15. length=15
+	from input.&file_name. as a, input.MF_NDC_SA_VERSION as b
+	where a.NDC = b.NDC;
+quit;
+%mend;
+
+%fetch_drugs(RXCLAIMS_PAD, FILL_DT, DAYS_SUP);
+%fetch_drugs(RXWRITTEN_PAD, RXDATE, DAYS_SUPPLY);
+
+
+/*DRUG_R*/
+/*options mprint mlogic symbolgen;*/
+%macro drug_r (drug, alias1, alias2, type);
+data drug_r_&drug.(keep=ptid drug_dt generic_name type file);
+	set input.drug_r (rename=(note_date=drug_dt));
+	length generic_name $50 type $10 file $15;
+	format generic_name $50. type $10. file  $15.;
+	where lowcase(DRUG_NAME) CONTAINS "&drug." OR lowcase(DRUG_NAME) CONTAINS "&alias1."
+	OR lowcase(DRUG_NAME) CONTAINS "&alias2.";
+	generic_name="&drug.";
+	type="&type.";
+	file="DRUG_R";
+run;
+%mend;
+
+%drug_r(busulfan, busulfan, busulfan, oral);	/*Route of administration (ROA) has no impact in final regimen, as per the business rule. So if both ORAL and INJECTION are available for a given drug then consider any one of them*/
+%drug_r(danazol, danazol, danazol, oral);
+%drug_r(dexamethasone, dexamethasone, dexamethasone, oral);
+%drug_r(erythropoietins, erythropoietin, erythropoietin, oral);
+%drug_r(fluoxymesterone, fluoxymesterone, fluoxymesterone, oral);
+%drug_r(ruxolitinib, jakafi, jakafi, oral);
+%drug_r(nandrolone, nandrolone, nandrolone, injection); /*considered injection: refer to "MF drugs NDC-with duplicates"
+											sheet of "13177-MF_Drugs_NDC_2015-10-20" excel*/
+%drug_r(methandrostenolone, methandrostenolone, methandrostenolone, oral);
+%drug_r(oxymetholone, oxymetholone, oxymetholone, oral);
+%drug_r(thalidomide, thalidomide, thalidomide, oral);
+%drug_r(lenalidomide, lenalidomide, lenalidomide, oral);
+%drug_r(pomalidomide, pomalidomide, pomalidomide, oral);
+%drug_r(prednisolone, prednisolone, prednisolone, oral);
+%drug_r(hydroxyurea, hydrea, hydrea, oral);
+%drug_r(melphalan, melphalan, melphalan, oral);
+%drug_r(cyclophosphamide, cyclophosphamide, cyclophosphamide, oral);
+%drug_r(fludarabine, fludarabine, fludarabine, injection);
+
+
+data inter.DRUG_DRUG_R;
+	set
+	drug_r_fluoxymesterone
+	drug_r_ruxolitinib
+	drug_r_erythropoietins
+	drug_r_danazol
+	drug_r_nandrolone
+	drug_r_methandrostenolone
+	drug_r_oxymetholone
+	drug_r_thalidomide
+	drug_r_lenalidomide
+	drug_r_pomalidomide
+	drug_r_prednisolone
+	drug_r_hydroxyurea
+	drug_r_busulfan
+	drug_r_melphalan
+	drug_r_cyclophosphamide
+	drug_r_fludarabine
+	drug_r_dexamethasone;
+run;
+proc sort data=inter.DRUG_DRUG_R noduprecs;
+by ptid drug_dt generic_name;
+run;
+
+
+/*COMBINE ALL DRUG DATA*/
+data inter.ALL_DRUG;
+	set
+	inter.PROC_PROCEDURE
+	inter.PROC_MEDCLAIMS
+	inter.DRUG_MEDADMIN_PAD
+	inter.DRUG_MEDCLAIMS_PAD
+	inter.DRUG_PRO_PAD
+	inter.DRUG_RXCLAIMS_PAD
+	inter.DRUG_RXWRITTEN_PAD
+	inter.DRUG_DRUG_R;
+run;
+
+proc sort data = inter.ALL_DRUG;
+	by ptid drug_dt generic_name descending dayssup;
+run;
+
+proc sort data = inter.ALL_DRUG out = ALL_DRUG2 nodupkey;* (drop=file) ;
+	by ptid drug_dt generic_name;
+run;
+
+data ALL_DRUG3;
+	set ALL_DRUG2;
+	if dayssup eq . or dayssup lt 15 then dayssup=30;	/*Anuj: changed le to lt on 13th Nov 2015*/
+run;
+/*-----------------*/
+proc sort data=inter.ALL_TAGGED_PAT out=ALL_TAGGED_PAT(rename=(type=pat_type));
+by ptid;
+run;
+
+
+
+data ALL_DRUG_ELIGIBLE_PAT (keep=ptid drug_dt file generic_name dayssup);
+	merge ALL_TAGGED_PAT (in=a) 
+		 all_drug3 (in=b);
+	by ptid;
+	if a and b;
+	if drug_dt lt min_index_dt then delete;
+	if group ne "90+" or age_group eq "under 18 years" then delete;
+	if pat_type=3 then pat_type=2;	/*type 2(post PV/ET PMF) and 3(post PV/ET SMF) tagged as same group*/
+run;
+
+data inter.ALL_DRUG_ELIGIBLE_PAT;
+set ALL_DRUG_ELIGIBLE_PAT;
+generic_name = lowcase(generic_name);
+run;
+
+
+/* 			Main regimen code			 */
+
+%let day_diff=90;
+
+%macro drg(dr=,	orl=);
+data &dr; *(drop=dt_lag);
+	set inter.ALL_DRUG_ELIGIBLE_PAT(keep=ptid generic_name drug_dt dayssup );
+	by ptid;
+	length orl $3;
+	where generic_name = "&dr";
+	format dt_lag date7.;
+	dt_lag = lag(drug_dt);
+	if first.ptid then dt_lag = .;
+	if dt_lag ne . then gap = drug_dt - dt_lag;
+	orl = &orl;
+run;
+%mend drg;
+
+%drg(dr=erythropoietins, 	orl="yes");
+%drg(dr=danazol, 			orl="yes");
+%drg(dr=dexamethasone, 		orl="yes");
+%drg(dr=nandrolone, 		orl="not");
+%drg(dr=fluoxymesterone, 	orl="yes");
+%drg(dr=methandrostenolone, orl="yes");
+%drg(dr=oxymetholone, 		orl="yes");
+%drg(dr=thalidomide, 		orl="yes");
+%drg(dr=lenalidomide, 		orl="yes");
+%drg(dr=pomalidomide, 		orl="yes");
+%drg(dr=prednisolone, 		orl="yes");
+%drg(dr=hydroxyurea, 		orl="yes");
+%drg(dr=busulfan, 			orl="yes");
+%drg(dr=melphalan, 			orl="yes");
+%drg(dr=ruxolitinib, 		orl="yes");
+%drg(dr=cyclophosphamide, 	orl="yes");
+%drg(dr=fludarabine, 		orl="not");
+/*Added Splenectomy and radiation dated: June 03, 2016 */
+%drg(dr=splenectomy, 	orl="not");
+%drg(dr=radiation, 		orl="not");
+
+
+/*b)	A drug used multiple times with a gap of more or equal than 90 days will have multiple treatment periods*/
+/*(start dates and end dates)   */
+
+%macro drg1(dr=, diff=);
+
+data &dr.1(keep = ptid reg start_date end_date);
+	set &dr.(keep = ptid generic_name drug_dt orl dayssup);
+	retain prev_drg_dt prev_drg_dt_days start_date end_date;
+	format prev_drg_dt prev_drg_dt_days start_date end_date date7.;
+	by ptid;
+	if first.ptid then 
+	do;
+		start_date = drug_dt;
+				prev_drg_dt = drug_dt;
+		*if orl = 'Not' then prev_drg_dt_days = drug_dt + 1;
+		*else do;
+			 prev_drg_dt_days = drug_dt + dayssup-1;	/*16th Nov 15, subtracted 1 */
+		*end;
+	end;
+
+	if drug_dt gt prev_drg_dt_days + &day_diff. -1 then	/*16th Nov 15, changed prev_drg_dt to prev_drg_dt_days*/
+														/* Dec 1, 2015 subtracted 1 for BR) 1.B */
+	do;
+		end_date = prev_drg_dt_days ;
+		reg = generic_name;
+		output;
+		start_date = drug_dt;
+	end;
+
+	if last.ptid then
+	do;	
+		*if orl = 'Not' then end_date = drug_dt + 1;
+		*else do;
+				end_date = drug_dt + dayssup-1;	/*16th Nov 15, subtracted 1 */
+		*end;
+		reg = generic_name;
+		output;
+	end;
+
+	prev_drg_dt = drug_dt;
+	*if orl = 'Not' then prev_drg_dt_days = drug_dt + 1;
+	*else do;
+	prev_drg_dt_days = drug_dt + dayssup-1;	/*16th Nov 15, subtracted 1 */
+	*end;
+run;
+
+%mend drg1;
+
+%drg1(dr=erythropoietins);
+%drg1(dr=danazol);
+%drg1(dr=dexamethasone);
+%drg1(dr=nandrolone);
+%drg1(dr=fluoxymesterone);
+%drg1(dr=methandrostenolone);
+%drg1(dr=oxymetholone);
+%drg1(dr=thalidomide);
+%drg1(dr=lenalidomide);
+%drg1(dr=pomalidomide);
+%drg1(dr=prednisolone);
+%drg1(dr=hydroxyurea);
+%drg1(dr=busulfan);
+%drg1(dr=melphalan);
+%drg1(dr=ruxolitinib);
+%drg1(dr=cyclophosphamide);
+%drg1(dr=fludarabine);
+%drg1(dr=splenectomy);
+%drg1(dr=radiation);
+
+
+data allreg_drug;
+	set
+		erythropoietins1
+		danazol1
+		dexamethasone1
+		nandrolone1
+		fluoxymesterone1
+		methandrostenolone1
+		oxymetholone1
+		thalidomide1
+		lenalidomide1
+		pomalidomide1
+		prednisolone1
+		hydroxyurea1
+		busulfan1
+		melphalan1
+		ruxolitinib1
+		cyclophosphamide1
+		fludarabine1
+		splenectomy1
+		radiation1
+;
+run;
+
+proc sort data=allreg_drug;
+	by ptid start_date reg;
+run;
+
+
+/* To combine start date and end date into one variable - From_dt*/
+/*START:Replace this code with Hemanth's code*/
+
+data temp2_regimen (keep = ptid start_date from_dt end_Date reg);
+	set allreg_drug;
+	format start_date end_date from_dt date7.;
+	from_dt = start_date;
+	output;
+	from_dt = end_date;
+	output;
+run;
+
+proc sort data = temp2_regimen out = temp3_regimen;
+	by ptid from_dt;
+run;
+
+
+%macro drg2(dr=);
+	proc sql;
+	create table &dr._regimen as 
+	select a.* , b.reg as &dr 
+	from temp3_regimen as a left join allreg_drug as b
+	on a.ptid = b.ptid and  b.start_date <= a.from_dt < b.end_date  and b.reg = "&dr";
+	quit;
+%mend drg2;
+
+%drg2(dr=erythropoietins);
+%drg2(dr=danazol);
+%drg2(dr=dexamethasone);
+%drg2(dr=nandrolone);
+%drg2(dr=fluoxymesterone);
+%drg2(dr=methandrostenolone);
+%drg2(dr=oxymetholone);
+%drg2(dr=thalidomide);
+%drg2(dr=lenalidomide);
+%drg2(dr=pomalidomide);
+%drg2(dr=prednisolone);
+%drg2(dr=hydroxyurea);
+%drg2(dr=busulfan);
+%drg2(dr=melphalan);
+%drg2(dr=ruxolitinib);
+%drg2(dr=cyclophosphamide);
+%drg2(dr=fludarabine);
+%drg2(dr=splenectomy);
+%drg2(dr=radiation);
+
+
+%macro drg3(dr=);
+
+	proc sort data = &dr._regimen ;
+	by ptid from_dt;
+	run;
+
+%mend drg3;
+/**/
+%drg3(dr=erythropoietins);
+%drg3(dr=danazol);
+%drg3(dr=dexamethasone);
+%drg3(dr=nandrolone);
+%drg3(dr=fluoxymesterone);
+%drg3(dr=methandrostenolone);
+%drg3(dr=oxymetholone);
+%drg3(dr=thalidomide);
+%drg3(dr=lenalidomide);
+%drg3(dr=pomalidomide);
+%drg3(dr=prednisolone);
+%drg3(dr=hydroxyurea);
+%drg3(dr=busulfan);
+%drg3(dr=melphalan);
+%drg3(dr=ruxolitinib);
+%drg3(dr=cyclophosphamide);
+%drg3(dr=fludarabine);
+%drg3(dr=splenectomy);
+%drg3(dr=radiation);
+
+
+/**/
+data temp4_regimen;
+merge
+	erythropoietins_regimen
+	danazol_regimen
+	dexamethasone_regimen
+	nandrolone_regimen
+	fluoxymesterone_regimen
+	methandrostenolone_regimen
+	oxymetholone_regimen
+	thalidomide_regimen
+	lenalidomide_regimen
+	pomalidomide_regimen
+	prednisolone_regimen
+	hydroxyurea_regimen
+	busulfan_regimen
+	melphalan_regimen
+	ruxolitinib_regimen
+	cyclophosphamide_regimen
+	fludarabine_regimen
+    splenectomy_regimen
+    radiation_regimen;
+	by ptid from_dt;
+run;
+
+
+data temp5_regimen (keep = ptid temp_regimen  temp_start temp_end);
+ set temp4_regimen;
+by ptid;
+format temp_Start temp_end date9.;
+temp_end =  from_dt;
+temp_start = from_dt;
+temp_regimen = catx(',',ruxolitinib, erythropoietins, danazol, nandrolone, fluoxymesterone,
+					methandrostenolone, oxymetholone, thalidomide, lenalidomide, pomalidomide,
+					hydroxyurea, busulfan, melphalan, cyclophosphamide,
+					fludarabine,  dexamethasone, prednisolone,radiation,splenectomy);
+run;
+
+proc sort data = temp5_regimen out = temp5_regimen2 noduprecs;/**/
+	by _all_;
+run;
+
+
+/*Change By Anirban Ghosh dated: June 03, 2016 - Regimain contains steriods along with other mf drug ,streiods will be replace */
+
+data temp5_regimen2;
+	set temp5_regimen2;
+	n=countw(temp_regimen);
+	if n >1 then do;
+	reg1=prxchange('s/,prednisolone|,dexamethasone|prednisolone,|dexamethasone,//i',-1,temp_regimen);
+	end;
+	else do reg1=temp_regimen;
+	end;
+	o=countw(reg1);
+	if o ge 1 then do;
+	reg2=prxchange('s/prednisolone|dexamethasone//i',-1,reg1);
+	end;
+	else do reg2=reg1;
+	end;
+	if reg2='' then reg2=temp_regimen;
+	drop n o temp_regimen reg1;
+	rename reg2=temp_regimen;
+	dur=temp_end-temp_start;
+run;
+
+/**/
+data temp6_regimen ;
+	set temp5_regimen2 ;
+	by ptid;
+	format startdate enddate prev_temp_end date7.;
+	retain prev_temp_regimen startdate prev_temp_end;
+	if first.ptid then
+		do; 
+			prev_temp_regimen = temp_regimen;
+			startdate = temp_Start;
+		end;
+
+	if temp_regimen ne prev_temp_regimen then 
+		do;
+		if prev_temp_regimen = '' then
+			do;	
+				enddate = temp_start -1 ;
+				regimen = prev_temp_regimen;
+				if startdate ne enddate then output;
+				startdate = temp_Start;
+			end;
+		else
+			do;
+				if temp_regimen = '' OR  INDEX(prev_temp_regimen,trim(temp_regimen))> 0 then
+					do;
+						enddate = temp_start;
+						regimen = prev_temp_regimen;
+						output;
+						startdate = temp_Start + 1;
+					end;
+				else 
+					do;
+						enddate = temp_start - 1;
+						regimen = prev_temp_regimen;
+						output;
+						startdate = temp_Start ;
+					end;
+			end;
+		end;
+	prev_temp_end = temp_end;
+	prev_temp_regimen = temp_regimen;
+
+run;
+ 
+proc transpose data = temp6_regimen out = trans_strt prefix = strt;
+	by ptid;
+	var startdate;
+run;
+
+proc transpose data = temp6_regimen out = trans_end prefix = ends;
+	by ptid;
+	var enddate;
+run;
+
+proc transpose data = temp6_regimen out = trans_reg prefix = reg;
+	by ptid;
+	var regimen;
+run;
+
+data temp6_regimen2_final(drop = _name_);
+	merge trans_strt trans_end trans_reg;
+	by ptid;
+run;
+/*step up step down for for consecutive regimen with no gap*/
+
+data regimen2_6  ;
+	set temp6_regimen2_final ;
+	array strt(35) strt1-strt35;
+	array ends(35) ends1-ends35;
+	array reg(35) $ reg1-reg35;
+    z= N(of strt:);
+	do i = 1 to z ;
+		l=0;
+		if strt(i) ne . and reg(i) ne '' and (ends(i)-strt(i)+1) le 30 then
+		/*Merge if succeeding regimen is step up or step down*/
+		do;
+			cnt1=count(reg(i),',')+1;
+			cnt2=count(reg(i+1),',')+1;
+			match_cnt=0;
+			do m = 1 to cnt1;
+				do n = 1 to cnt2;
+					if scan (compress(reg(i)),m,',') = scan (compress(reg(i+1)),n,',') then
+					match_cnt=match_cnt +1;
+				end;
+			end;
+			if  match_cnt eq min(cnt1, cnt2) then
+			do;
+				if (ends(i)-strt(i)) < (ends(i+1)-strt(i+1)) then reg(i) = reg(i+1);
+				ends(i) = ends(i+1);
+				l = 100;
+				do k = i+1  to z - 1 ;
+					strt(k) = strt(k+1);
+					ends(k) = ends(k+1);
+					reg(k ) = reg(k+1);
+				end;
+				strt(z) = .;
+				ends(z) = .;
+				reg(z) = '';            
+				if l = 100  then i = i -1;
+			end;
+		
+		/*Merge if preceding regimen is step up or step down*/  
+		if l ne 100 and i ge 2 then
+			do;
+				cnt1=count(reg(i-1),',')+1;
+				cnt2=count(reg(i),',')+1;
+				match_cnt=0;
+				do m = 1 to cnt1;
+					do n = 1 to cnt2;
+						if scan (compress(reg(i-1)),m,',') = scan (compress(reg(i)),n,',') then
+							match_cnt=match_cnt +1;
+					end;
+				end;
+				if  match_cnt eq min(cnt1, cnt2) then
+				
+				do;
+					if (ends(i-1)-strt(i-1)) < (ends(i)-strt(i)) then reg(i-1) = reg(i);
+					ends(i-1) = ends(i);
+					l = 100;
+					do k = i  to z - 1;
+						strt(k) = strt(k+1);
+						ends(k) = ends(k+1);
+						reg(k ) = reg(k+1);
+					end;
+					strt(z) = .;
+					ends(z) = .;
+					reg(z) = '';            
+					if l = 100  then i = i -2;
+				end;
+			end;
+		end;
+	end;
+run;
+
+
+data regimen2_7 (drop = strt1-strt35 reg1-reg35 ends1-ends35 i z k l m n cnt1 cnt2 match_cnt);
+	set regimen2_6;
+	array strt(35) strt1-strt35;
+	array ends(35) ends1-ends35;
+	array reg(35) $ reg1-reg35;
+	format start end date7.;
+	do i = 1 to N( of strt:);
+		regimen = reg(i);
+		start = strt(i);
+		end = ends(i);
+		if regimen ='' then do;
+		end;
+		else output;
+	end;
+run;
+
+
+proc sort data= regimen2_7 out=regimen2_8; *(rename=(sdate1=start edate1=end));
+	by ptid regimen start;
+run;
+
+data regimen2_9 (drop=prev_end end start regimen);
+     set regimen2_8;
+     by ptid regimen start;
+     retain new_start prev_end new_end new_reg;
+     format new_start new_end prev_end date9.;
+     if first.regimen then
+     do;
+           new_start=start;
+           prev_end=end;
+           new_reg=regimen;
+     end;
+     if first.regimen ne 1 and start-prev_end ne 1 then
+     do;
+           new_end=prev_end;
+           output;
+           new_start=start;
+     end;
+     if last.regimen then
+     do;
+           new_end=end;
+           output;
+     end;
+     prev_end=end;
+run;
+
+proc sort data=regimen2_9;
+	by ptid new_start;
+run;
+
+data regimen2_10 (rename=(new_start=start new_end=end new_reg=reg)); 
+     set regimen2_9;
+	 by ptid;
+	 if first.ptid eq 1 and lowcase(new_reg) eq "" then delete;
+	 dur=new_end - new_start +1;
+	 
+run;
+
+proc sort data=regimen2_10
+     out=regimen2_11;
+     by ptid start reg;
+quit;
+
+proc sort data=regimen2_11;
+by ptid;
+run;
+/* steriods will be deleted if the duration is less than 30*/
+
+data regimen2_11;
+set regimen2_11;
+if reg in ('dexamethasone','prednisolone','danazol','fluoxymesterone','dexamethasone,prednisolone','prednisolone,dexamethasone') and dur lt 30 then delete;
+/*updated: June 03, 2016 for danazol','fluoxymesterone'*/
+run;
+
+
+/* Assigning Blank Regimen-  updated: June 03, 2016*/
+data regimen2_12 ;
+	_n_ ++ 1;
+	if _n_ <= n then do;
+	set regimen2_11 point=_n_;
+	next_start = start;
+	next_end = end;
+	next_reg = reg;
+	end;
+	else do; 
+	next_start = .;
+	next_end = .;
+	next_reg = "";
+	end;
+	set regimen2_11 nobs = n;
+	format next_start next_end date9.;
+run; 
+
+Data regimen2_13;
+	set regimen2_12;
+	by ptid;
+	if last.ptid then do;
+	next_start=.;
+	next_end=.;
+	next_reg='';
+	end;
+	gap1 = next_start - end;
+run;
+
+Data regimen2_14(keep=ptid start end reg);
+	set regimen2_13;
+	if gap1 > 1 then do;
+	output;
+	start = end+1;
+	end = next_start -1;
+	reg = "blank";
+	output;
+	end;
+else output;
+run; 
+
+/* finding the successive dates (reverse lag)*/
+data regimen2_15 (keep=ptid next_start next_end next_reg);
+	_n_ ++ 1;
+	if _n_ <= n then do;
+	set regimen2_14 point=_n_;
+	next_start = start;
+	next_end = end;
+	next_reg = reg;
+	end;
+	else do; 
+	next_start = .;
+	next_end = .;
+	next_reg = "";
+	end;
+	set regimen2_14 nobs = n;
+	format next_start next_end date9.;
+run; 
+
+data regimen3_1; 
+	merge regimen2_15 regimen2_14;
+	by ptid;
+run;
+
+proc sort data=regimen3_1
+     out=regimen3_2;
+     by ptid start reg;
+quit;
+
+data regimen3_3; 
+	set regimen3_2 ;
+	by ptid start reg ;
+	format start end last_start last_end next_start date9.; 
+	last_reg=lag(reg);
+	last_start=lag(start);
+	last_end=lag(end); 
+	if first.ptid or last.ptid then call missing (last_reg, next_reg, last_start, last_end, next_start, next_end);
+run;
+
+%let blank_dur=90; *updated: June 03, 2016;
+
+data regimen3_4;
+	set regimen3_3;
+	by ptid start reg ;
+	if not (first.ptid or last.ptid);
+	if compress(lowcase(reg)) eq "blank" and (compress(lowcase(last_reg)) ne "blank") and
+		last_reg eq next_reg and (end-start +1 lt &blank_dur.); *updated: June 03, 2016;
+run;
+
+data regimen3_4_merge (keep= ptid new_start new_end new_reg);
+     set regimen3_4;
+     by ptid start;
+     retain new_start lag_next_end new_end lag_next_reg;
+     format new_start new_end lag_next_end date9.;
+     if first.ptid then
+     do;
+           new_start=last_start;
+           lag_next_end=next_end;
+           lag_next_reg=next_reg;
+     end;
+     if first.ptid ne 1 and (lag_next_end ne last_end or lag_next_reg ne last_reg) then
+     do;
+           new_end=lag_next_end;
+		   new_reg=lag_next_reg;
+           output;
+           new_start=last_start;
+     end;
+     if last.ptid then
+     do;
+           new_end=next_end;
+		   new_reg=next_reg;
+           output;
+     end;
+     lag_next_end=next_end;
+run;
+
+/*selecting regimens which were merged*/
+proc sql;
+	create table regimen3_5 as select
+	a.* from regimen2_11 as A, regimen3_4_merge as B 
+	where a.ptid=b.ptid and 
+		(a.start between b.new_start and b.new_end);
+quit;
+
+proc sort data=regimen3_5 out=regimen3_5;
+	by _all_;
+run;
+
+proc sort data=regimen2_11 out=regimen2_10;
+	by _all_;
+run;
+
+/*selecting regimens which were not merged*/
+data regimen3_6;
+	merge regimen2_10(in=a) regimen3_5(in=b);
+	by _all_;
+	if a and not b ;
+run;
+
+data regimen3_7;
+	set	
+		regimen3_6
+		regimen3_4_merge (rename=(new_start=start new_end=end new_reg=reg));
+run;
+
+proc sort data=regimen3_7;
+	by ptid start;
+quit;
+
+proc transpose data = regimen3_7 out = trans_strt prefix = strt;
+	by ptid;
+	var start;
+run;
+
+proc transpose data = regimen3_7 out = trans_end prefix = ends;
+	by ptid;
+	var end;
+run;
+
+proc transpose data = regimen3_7 out = trans_reg prefix = reg;
+	by ptid;
+	var reg;
+run;
+
+data regimen3_8 (drop = _name_);
+	merge trans_strt trans_end trans_reg;
+	by ptid;
+run;
+
+data regimen3_9;
+	set regimen3_8 ;
+	array strt(24) strt1-strt24;
+	array ends(24) ends1-ends24;
+	array reg(24) $ reg1-reg24;
+	z= N(of strt:);
+			
+	/* the below part merges preceding and succeding regimen if one being stepup or step down of other, 
+	and blank regimen to be less than 30 days*/
+
+	do i = 2  to z ;
+		y = 0;
+		if lowcase(reg(i)) = 'blank' and lowcase(reg(i-1)) ne 'blank' and lowcase(reg(i+1)) ne 'blank' and strt(i) ne . then
+			do;
+				if ends(i) - strt(i)+1 lt 30 then
+					do;
+					/* Checking if a regimen is subset of preceding or succeeding regimen*/
+						cnt1=count(reg(i),',')+1;
+						cnt2=count(reg(i+1),',')+1;
+						match_cnt=0;
+						do m = 1 to cnt1;
+							do n = 1 to cnt2;
+								if scan (compress(reg(i)),m,',') = scan (compress(reg(i+1)),n,',') then
+									match_cnt=match_cnt +1;
+							end;
+						end;
+						if  match_cnt eq min(cnt1, cnt2)
+							and	(ends(i-1)-strt(i-1)+1 < 15 or ends(i+1)-strt(i+1)+1 < 15 ) then
+							do;
+								if (ends(i-1)-strt(i-1)) < (ends(i+1)-strt(i+1)) then reg(i-1) = reg(i+1);
+								ends(i-1) = ends(i+1);
+								y = 100;
+								do k = i  to z - 2 ;
+									strt(k) = strt(k+2);
+									ends(k) = ends(k+2);
+									reg(k ) = reg(k+2);
+								end;
+								do k =  z-1 to Z;
+									strt(k ) = .;
+									ends(k ) = .;
+									reg(k ) = '';
+								end;	
+							end;
+					end;
+			end;
+			if y = 100 then i = i -1;
+	end;
+run;
+
+data regimen3_10 (drop = strt1-strt24 reg1-reg24 ends1-ends24 i z k y m n cnt1 cnt2 match_cnt);
+	set regimen3_9;
+	array strt(24) strt1-strt24;
+	array ends(24) ends1-ends24;
+	array reg(24) $ reg1-reg24;
+	format start end date7.;
+	do i = 1 to N( of strt:);
+		regimen = reg(i);
+		start = strt(i);
+		end = ends(i);
+		if regimen ='' then do;
+		end;
+		else output;
+	end;
+run;
+
+data inter.regimen_final;
+	set regimen3_10;
+	by ptid; 
+	retain lot; 
+	if first.ptid then lot=0; 
+	lot+1;
+run;
+
+proc sql;
+	select count(distinct ptid) from inter.regimen_final;
+quit;
+
+Data final.regimen_final;
+set inter.regimen_final;
+	length regimen_rename2 $100.;
+	y = countw(regimen);
+	if y=1 then do;
+	if regimen in ('ruxolitinib') then regimen_rename2='JAKAFI';
+	else if regimen in ('hydroxyurea') then  regimen_rename2='Hydroxyurea';
+	else if regimen in ('prednisolone','fluoxymesterone','dexamethasone','danazol',
+	'dexamethasone,prednisolone')then regimen_rename2='Steriods';
+	else if (scan(regimen,1) in ("radiation",",radiation") ) then regimen_rename2 = 'Radiation and Other';	
+	else if regimen in ('erythropoietins') then regimen_rename2='Best Supporting Care and Other';
+	else if regimen in ('melphalan','lenalidomide','thalidomide',
+	'fludarabine','busulfan','pomalidomide','cyclophosphamide')then regimen_rename2='Chemotherapy and Other';
+    else if regimen in ("splenectomy") then regimen_rename2 ='Splenectomy and Other';
+    else regimen_rename2=regimen;
+	end;
+	else if y=2 then do;
+	if (scan(regimen,1) = "ruxolitinib" and scan(regimen,2) ne ""  )
+	then regimen_rename2='JAKAFI and Other';
+	else if (scan(regimen,1) = "hydroxyurea" or scan(regimen,2) = "hydroxyurea" ) 
+	then regimen_rename2 = 'Hydroxyurea and Other';	
+	else if scan(regimen,1)='erythropoietins' and scan(regimen,2)='fluoxymesterone'
+	 then regimen_rename2='Best Supporting Care and Other';
+	else if (scan(regimen,1) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide','danazol')
+			and scan(regimen,2) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide')) 
+	then regimen_rename2='Chemotherapy and Other';
+	else if (scan(regimen,1) = "splenectomy" or scan(regimen,2) = "splenectomy" ) then regimen_rename2 ='Splenectomy and Other';
+	else if (scan(regimen,1) in ("radiation",",radiation") or scan(regimen,2) in ("radiation",",radiation") ) then regimen_rename2 = 'Radiation and Other';	
+	else if (scan(regimen,1) in ('erythropoietins','fluoxymesterone','danazol')and scan(regimen,2) in ('erythropoietins','fluoxymesterone','danazol'))
+			then regimen_rename2 = 'Best Supporting Care and Other';
+	else if (scan(regimen,1) in ('dexamethasone','prednisolone') or scan(regimen,2) in ('dexamethasone','prednisolone'))
+	then regimen_rename2='Steriods';
+	else regimen_rename2=regimen;
+	end;
+	else if y=3 then do;
+	if (scan(regimen,1) = "ruxolitinib" and scan(regimen,2) ne "" and scan(regimen,3) ne "" ) 
+	then regimen_rename2='JAKAFI and Other';
+	else if (scan(regimen,1) = "hydroxyurea" or scan(regimen,2) = "hydroxyurea" or scan(regimen,3) = "hydroxyurea") 
+	then regimen_rename2 = 'Hydroxyurea and Other';	
+	else if (scan(regimen,1) in ('erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide','danazol')
+			and scan(regimen,2) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide','danazol')
+		    and scan(regimen,3) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide','danazol')) 
+	then regimen_rename2='Chemotherapy and Other';
+	else if (scan(regimen,1) = "splenectomy" or scan(regimen,2) = "splenectomy"  or scan(regimen,3) = "splenectomy" )
+	then regimen_rename2 ='Splenectomy and Other';
+	else if (scan(regimen,1) in ("radiation",",radiation") or scan(regimen,2) in ("radiation",",radiation") or scan(regimen,3) in ("radiation",",radiation"))
+	then regimen_rename2 = 'Radiation and Other';	
+	else if (scan(regimen,1) in ('erythropoietins','fluoxymesterone','danazol')and scan(regimen,2) in ('erythropoietins','fluoxymesterone','danazol')
+	and scan(regimen,3) in ('erythropoietins','fluoxymesterone','danazol'))            
+	then regimen_rename2 = 'Best Supporting Care and Other';
+	else regimen_rename2=regimen;
+	end;
+	else if y=4 then do;
+	if scan(regimen,1) = "ruxolitinib" and scan(regimen,2) ne "" and scan(regimen,3) ne ""
+    and scan(regimen,4) ne "" then regimen_rename2='JAKAFI and Other';
+	else if (scan(regimen,1) = "hydroxyurea" or scan(regimen,2) = "hydroxyurea" or scan(regimen,3) = "hydroxyurea"  
+	or scan(regimen,4) = "hydroxyurea") then regimen_rename2 = 'Hydroxyurea and Other';	
+	else if (scan(regimen,1) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide','danazol')
+			and scan(regimen,2) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide','danazol')
+		    and scan(regimen,3) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide')
+	         and scan(regimen,4) in ('fluoxymesterone','lenalidomide','erythropoietins',
+	                                'thalidomide','fludarabine','melphalan','busulfan',
+	                                'cyclophosphamide')) 
+	then regimen_rename2='Chemotherapy and Other';
+	else if (scan(regimen,1) = "splenectomy" or scan(regimen,2) = "splenectomy"  or scan(regimen,3) = "splenectomy" 
+	 or scan(regimen,4) = "splenectomy") then regimen_rename2 ='Splenectomy and Other';
+	else if (scan(regimen,1) in ("radiation",",radiation") or scan(regimen,2) in ("radiation",",radiation") or scan(regimen,3) in ("radiation",",radiation")
+	or scan(regimen,4) in ("radiation",",radiation") )then regimen_rename2 = 'Radiation and Other';	
+	else if (scan(regimen,1) in ('erythropoietins','fluoxymesterone','danazol')and scan(regimen,2) in ('erythropoietins','fluoxymesterone','danazol')
+	and scan(regimen,3) in ('erythropoietins','fluoxymesterone','danazol') and scan(regimen,4) in ('erythropoietins','fluoxymesterone','danazol'))
+	then regimen_rename2 = 'Best Supporting Care and Other';
+	else regimen_rename2=regimen;
+	end;
+	drop y;
+	rename ptid=patient_id regimen_rename2=converted_regimen;
+run;
+
+
+Proc transpose data=final.regimen_final prefix=TRT_ out=lot_transposed (DROP= _NAME_ );
+	by patient_id;
+	id lot;
+	var Converted_regimen ;
+run;
+Proc transpose data=final.regimen_final prefix=TRT_STDT_ out=strtdat_transposed (DROP= _NAME_);
+	by patient_id;
+	id lot;
+	var start;
+run;
+
+Proc transpose data=final.regimen_final prefix=TRT_ENDDT_ out=enddate_transposed (DROP= _NAME_ );
+	by patient_id;
+	id lot;
+	var end;
+run;
+
+DATA final.mf_optum_final_data;
+	MERGE mf_optum_data(in=a) lot_transposed strtdat_transposed enddate_transposed ;
+	by patient_id;
+	if a;
+run;
+
+
+
+
