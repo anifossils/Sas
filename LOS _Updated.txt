@@ -1,0 +1,546 @@
+libname data "Y:\13480_RSV\Data\ADS\Analysis Datasets\31MAR2017";
+/*Checking max age for children */
+
+
+Proc sql;
+select max(age) from data.HOSP_LEVEL_CHILD_ALL_INS_31MAR;
+quit;
+
+/*Without any cut point */
+Data post_rsv_child;
+set data.HOSP_LEVEL_CHILD_ALL_INS_31MAR;
+format age_cat_cal $80. age_cat_cal_2 $80. age_cat_cal_3 $80.;
+if age = 0 then age_cat_cal = " New Born -  Age: 0 year";
+else if  1 <= age <= 2 then age_cat_cal= " Infants -  Age: (1-2) years";
+else if 3 <= age <= 5 then age_cat_cal= "Young Children -  Age: (3-5) years";
+else  age_cat_cal= "Children -  Age: (6-17) years";
+if 0 <= age <= 2 then age_cat_cal_2= "Infants -  Age: (0-2) Years";
+else age_cat_cal_2=age_cat_cal;
+if 0 <= age <= 5 then age_cat_cal_3= "Infants & Young children - Age: (0-5) years";
+else age_cat_cal_3=age_cat_cal;
+los=disch_date - admit_date + 1;
+where  post_rsv_hosp="Y";
+run;
+
+/*Check*/
+Data chk;
+set post_rsv_child;
+if flag_rsv ne flag_resp;
+run;
+
+/*Calculating Mean and sd for age category 1*/
+Proc sort data=post_rsv_child out=child_age_cat_cal;
+by age_cat_cal ;
+run;
+
+Proc means data=child_age_cat_cal;
+by age_cat_cal;
+var los;
+output out=post_rsv_child_mean_cat1(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+/*Calculating Mean and sd for age category 2*/
+Proc sort data=post_rsv_child out=child_age_cat_cal_2;
+by age_cat_cal_2 ;
+run;
+
+Proc means data=child_age_cat_cal_2;
+by age_cat_cal_2;
+var los;
+output out=post_rsv_child_mean_cat2(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+/*Calculating Mean and sd for age category 3*/
+Proc sort data=post_rsv_child out=child_age_cat_cal_3;
+by age_cat_cal_3 ;
+run;
+
+Proc means data=child_age_cat_cal_3;
+by age_cat_cal_3;
+var los;
+output out=post_rsv_child_mean_cat3(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+
+/*For adult and Elderly */
+
+/*Without any cut point */
+
+/*Checking max age for children */
+Proc sql;
+select min(age) from data.HOSP_LEVEL_Adults_ALL_INS_31MAR;
+quit;
+
+Data post_rsv_adult;
+set data.HOSP_LEVEL_Adults_ALL_INS_31MAR;
+format age_cat_cal $80. age_cat_cal_2 $80. age_cat_cal_3 $80. ;
+los=disch_date - admit_date + 1;
+if 18 <= age <= 64 then age_cat_cal= "Adults - Age: (18-64) years";
+else age_cat_cal= "Elderly - Age: 65+ years";
+age_cat_cal_2=age_cat_cal;
+if  age ge 18 then age_cat_cal_3= "Adults & Elderly -  Age: (18+) years";
+else age_cat_cal_3=age_cat_cal;
+where  post_rsv_hosp="Y";
+run;
+
+/*Check*/
+Data chk;
+set post_rsv_adult;
+if flag_rsv ne flag_resp;
+run;
+
+/*Calculating Mean and sd for age category 1*/
+Proc sort data=post_rsv_adult out=adult_age_cat_cal;
+by age_cat_cal ;
+run;
+
+Proc means data=adult_age_cat_cal;
+by age_cat_cal;
+var los;
+output out=post_rsv_adult_mean_cat1(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+/*Calculating Mean and sd for age category 2*/
+Proc sort data=post_rsv_adult out=adult_age_cat_cal_2;
+by age_cat_cal_2 ;
+run;
+
+Proc means data=adult_age_cat_cal_2;
+by age_cat_cal_2;
+var los;
+output out=post_rsv_adult_mean_cat2(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+/*Calculating Mean and sd for age category 3*/
+Proc sort data=post_rsv_adult out=adult_age_cat_cal_3;
+by age_cat_cal_3 ;
+run;
+
+Proc means data=adult_age_cat_cal_3;
+by age_cat_cal_3;
+var los;
+output out=post_rsv_adult_mean_cat3(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Getting all descriptive stats in a single data*/
+
+Data descriptive;
+format age_cat $80.;
+set post_rsv_adult_mean_cat1(rename=(age_cat_cal=AGE_CAT)) 
+post_rsv_adult_mean_cat2(rename=(age_cat_cal_2=AGE_CAT))
+post_rsv_adult_mean_cat3(rename=(age_cat_cal_3=AGE_CAT))
+Post_rsv_CHILD_mean_cat1(rename=(age_cat_cal=AGE_CAT)) 
+post_rsv_child_mean_cat2(rename=(age_cat_cal_2=AGE_CAT))
+post_rsv_child_mean_cat3(rename=(age_cat_cal_3=AGE_CAT))
+;
+run;
+
+Proc sort data=descriptive;
+by age_cat;
+run;
+
+DAta descriptive_all;
+set descriptive;
+by age_cat;
+if first.age_cat;
+run;
+
+/*For child and Infant */
+
+/*Data for 1 sd 2 sd cut point */
+/*CAtegory 1 */
+Proc sql;
+create table post_rsv_child_cat1 as select a.*,b.mean,b.Standard_Dev
+from post_rsv_child as a 
+left join descriptive_all as b
+on a.age_cat_cal=b.age_cat;
+quit;
+
+Data post_rsv_child_1sd_cat1 post_rsv_child_2sd_cat1;
+set post_rsv_child_cat1;
+cut_1=mean+Standard_Dev;
+cut_2=mean+2*Standard_Dev;
+if los <= cut_1 then output post_rsv_child_1sd_cat1;
+if los <= cut_2 then output post_rsv_child_2sd_cat1;
+run;
+/*Category 2 */
+Proc sql;
+create table post_rsv_child_cat2 as select a.*,b.mean,b.Standard_Dev
+from post_rsv_child as a 
+left join descriptive_all as b
+on a.age_cat_cal_2=b.age_cat;
+quit;
+
+Data post_rsv_child_1sd_cat2 post_rsv_child_2sd_cat2;
+set post_rsv_child_cat2;
+cut_1=mean+Standard_Dev;
+cut_2=mean+2*Standard_Dev;
+if los <= cut_1 then output post_rsv_child_1sd_cat2;
+if los <= cut_2 then output post_rsv_child_2sd_cat2;
+run;
+
+/*Category 3 */
+
+Proc sql;
+create table post_rsv_child_cat3 as select a.*,b.mean,b.Standard_Dev
+from post_rsv_child as a 
+left join descriptive_all as b
+on a.age_cat_cal_3=b.age_cat;
+quit;
+
+Data post_rsv_child_1sd_cat3 post_rsv_child_2sd_cat3;
+set post_rsv_child_cat3;
+cut_1=mean+Standard_Dev;
+cut_2=mean+2*Standard_Dev;
+if los <= cut_1 then output post_rsv_child_1sd_cat3;
+if los <= cut_2 then output post_rsv_child_2sd_cat3;
+run;
+
+/*Analysis for 1 sd cut point*/
+
+
+/*Calculating Mean and sd */
+
+/*Category 1*/
+
+Proc sort data=post_rsv_child_1sd_cat1;
+by age_cat_cal;
+run;
+
+Proc means data=post_rsv_child_1sd_cat1;
+by age_cat_cal;
+var los;
+output out=post_rsv_child_1sd_cat1_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 2*/
+
+Proc sort data=post_rsv_child_1sd_cat2;
+by age_cat_cal_2;
+run;
+
+Proc means data=post_rsv_child_1sd_cat2;
+by age_cat_cal_2;
+var los;
+output out=post_rsv_child_1sd_cat2_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 3*/
+
+Proc sort data=post_rsv_child_1sd_cat3;
+by age_cat_cal_3;
+run;
+
+Proc means data=post_rsv_child_1sd_cat3;
+by age_cat_cal_3;
+var los;
+output out=post_rsv_child_1sd_cat3_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Analysis for 2 sd cut point*/
+
+
+/*Calculating Mean and sd */
+
+/*Category 1*/
+
+Proc sort data=post_rsv_child_2sd_cat1;
+by age_cat_cal;
+run;
+
+Proc means data=post_rsv_child_2sd_cat1;
+by age_cat_cal;
+var los;
+output out=post_rsv_child_2sd_cat1_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 2*/
+
+Proc sort data=post_rsv_child_2sd_cat2;
+by age_cat_cal_2;
+run;
+
+Proc means data=post_rsv_child_2sd_cat2;
+by age_cat_cal_2;
+var los;
+output out=post_rsv_child_2sd_cat2_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 3*/
+
+Proc sort data=post_rsv_child_2sd_cat3;
+by age_cat_cal_3;
+run;
+
+Proc means data=post_rsv_child_2sd_cat3;
+by age_cat_cal_3;
+var los;
+output out=post_rsv_child_2sd_cat3_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+/*For adults  and elderly */
+
+/*Data for 1 sd 2 sd cut point */
+
+/*Data for 1 sd 2 sd cut point */
+/*CAtegory 1 */
+
+Proc sql;
+create table post_rsv_adult_cat1 as select a.*,b.mean,b.Standard_Dev
+from post_rsv_adult as a 
+left join descriptive_all as b
+on a.age_cat_cal=b.age_cat;
+quit;
+
+Data post_rsv_adult_1sd_cat1 post_rsv_adult_2sd_cat1;
+set post_rsv_adult_cat1;
+cut_1=mean+Standard_Dev;
+cut_2=mean+2*Standard_Dev;
+if los <= cut_1 then output post_rsv_adult_1sd_cat1;
+if los <= cut_2 then output post_rsv_adult_2sd_cat1;
+run;
+/*Category 2 */
+Proc sql;
+create table post_rsv_adult_cat2 as select a.*,b.mean,b.Standard_Dev
+from post_rsv_adult as a 
+left join descriptive_all as b
+on a.age_cat_cal_2=b.age_cat;
+quit;
+
+Data post_rsv_adult_1sd_cat2 post_rsv_adult_2sd_cat2;
+set post_rsv_adult_cat2;
+cut_1=mean+Standard_Dev;
+cut_2=mean+2*Standard_Dev;
+if los <= cut_1 then output post_rsv_adult_1sd_cat2;
+if los <= cut_2 then output post_rsv_adult_2sd_cat2;
+run;
+
+/*Category 3 */
+
+Proc sql;
+create table post_rsv_adult_cat3 as select a.*,b.mean,b.Standard_Dev
+from post_rsv_adult as a 
+left join descriptive_all as b
+on a.age_cat_cal_3=b.age_cat;
+quit;
+
+Data post_rsv_adult_1sd_cat3 post_rsv_adult_2sd_cat3;
+set post_rsv_adult_cat3;
+cut_1=mean+Standard_Dev;
+cut_2=mean+2*Standard_Dev;
+if los <= cut_1 then output post_rsv_adult_1sd_cat3;
+if los <= cut_2 then output post_rsv_adult_2sd_cat3;
+run;
+
+/*Analysis for 1 sd cut point*/
+
+
+/*Calculating Mean and sd */
+
+/*Category 1*/
+
+Proc sort data=post_rsv_adult_1sd_cat1;
+by age_cat_cal;
+run;
+
+Proc means data=post_rsv_adult_1sd_cat1;
+by age_cat_cal;
+var los;
+output out=post_rsv_adult_1sd_cat1_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 2*/
+
+Proc sort data=post_rsv_adult_1sd_cat2;
+by age_cat_cal_2;
+run;
+
+Proc means data=post_rsv_adult_1sd_cat2;
+by age_cat_cal_2;
+var los;
+output out=post_rsv_adult_1sd_cat2_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 3*/
+
+Proc sort data=post_rsv_adult_1sd_cat3;
+by age_cat_cal_3;
+run;
+
+Proc means data=post_rsv_adult_1sd_cat3;
+by age_cat_cal_3;
+var los;
+output out=post_rsv_adult_1sd_cat3_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Analysis for 2 sd cut point*/
+
+
+/*Calculating Mean and sd */
+
+/*Category 1*/
+
+Proc sort data=post_rsv_adult_2sd_cat1;
+by age_cat_cal;
+run;
+
+Proc means data=post_rsv_adult_2sd_cat1;
+by age_cat_cal;
+var los;
+output out=post_rsv_adult_2sd_cat1_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 2*/
+
+Proc sort data=post_rsv_adult_2sd_cat2;
+by age_cat_cal_2;
+run;
+
+Proc means data=post_rsv_adult_2sd_cat2;
+by age_cat_cal_2;
+var los;
+output out=post_rsv_adult_2sd_cat2_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Category 3*/
+
+Proc sort data=post_rsv_adult_2sd_cat3;
+by age_cat_cal_3;
+run;
+
+Proc means data=post_rsv_adult_2sd_cat3;
+by age_cat_cal_3;
+var los;
+output out=post_rsv_adult_2sd_cat3_mean(drop= _type_ _freq_) n=N mean=Mean Median=Median std=Standard_Dev min=Min Max=Max;
+run;
+
+
+/*Getting all descriptive stats in a single data for 1 sd cut point*/
+
+Data descriptive_1sd;
+format age_cat $80.;
+set post_rsv_adult_1sd_cat1_mean(rename=(age_cat_cal=AGE_CAT)) 
+post_rsv_adult_1sd_cat2_mean(rename=(age_cat_cal_2=AGE_CAT))
+post_rsv_adult_1sd_cat3_mean(rename=(age_cat_cal_3=AGE_CAT))
+post_rsv_child_1sd_cat1_mean(rename=(age_cat_cal=AGE_CAT)) 
+post_rsv_child_1sd_cat2_mean(rename=(age_cat_cal_2=AGE_CAT))
+post_rsv_child_1sd_cat3_mean(rename=(age_cat_cal_3=AGE_CAT))
+;
+run;
+
+Proc sort data=descriptive_1sd;
+by age_cat;
+run;
+
+DAta descriptive_all_1sd;
+set descriptive_1sd;
+by age_cat;
+if first.age_cat;
+run;
+
+
+/*Getting all descriptive stats in a single data for 2 sd cut point*/
+Data descriptive_2sd;
+format age_cat $80.;
+set post_rsv_adult_2sd_cat1_mean(rename=(age_cat_cal=AGE_CAT)) 
+post_rsv_adult_2sd_cat2_mean(rename=(age_cat_cal_2=AGE_CAT))
+post_rsv_adult_2sd_cat3_mean(rename=(age_cat_cal_3=AGE_CAT))
+post_rsv_child_2sd_cat1_mean(rename=(age_cat_cal=AGE_CAT)) 
+post_rsv_child_2sd_cat2_mean(rename=(age_cat_cal_2=AGE_CAT))
+post_rsv_child_2sd_cat3_mean(rename=(age_cat_cal_3=AGE_CAT))
+;
+run;
+
+Proc sort data=descriptive_2sd;
+by age_cat;
+run;
+
+DAta descriptive_all_2sd;
+set descriptive_2sd;
+by age_cat;
+if first.age_cat;
+run;
+
+
+/*Creating data for less than 6 days or more /14 day less or more /less than 30 days or more  */ 
+
+/*For child */
+
+data post_rsv_child_cat;
+set post_rsv_child;
+if LOS <= 6 then LOS_Count_6days ="Less than or equal to 6 days";
+else if LOS > 6 then LOS_Count_6days ="More than 6 days";
+if LOS > 14 then LOS_Count_14days ="More than 14 days";
+else LOS_Count_14days ="Less than 14 days";
+if LOS > 30 then LOS_Count_30days ="More than 30 days";
+else LOS_Count_30days ="Less than 30 days";
+run;
+
+proc freq data=post_rsv_child_cat;
+   tables  age_cat_cal*LOS_Count_6days  / out=cat1_Freq_child_6(rename=(LOS_Count_6days=category age_cat_cal=age_cat )) missing nocol norow;
+   tables  age_cat_cal*LOS_Count_14days  / out=cat1_Freq_child_14 (rename=(LOS_Count_14days=category age_cat_cal=age_cat))  missing norow nocol;
+   tables  age_cat_cal*LOS_Count_30days  / out=cat1_Freq_child_30(rename=(LOS_Count_30days=category age_cat_cal=age_cat))  missing norow nocol;
+   tables  age_cat_cal_2*LOS_Count_6days  / out=cat2_Freq_child_6(rename=(LOS_Count_6days=category age_cat_cal_2=age_cat)) missing norow nocol;
+   tables  age_cat_cal_2*LOS_Count_14days  / out=cat2_Freq_child_14 (rename=(LOS_Count_14days=category age_cat_cal_2=age_cat))  missing norow nocol;
+   tables  age_cat_cal_2*LOS_Count_30days  / out=cat2_Freq_child_30(rename=(LOS_Count_30days=category age_cat_cal_2=age_cat))  missing norow nocol;
+   tables  age_cat_cal_3*LOS_Count_6days  / out=cat3_Freq_child_6(rename=(LOS_Count_6days=category age_cat_cal_3=age_cat)) missing norow nocol;
+   tables  age_cat_cal_3*LOS_Count_14days  / out=cat3_Freq_child_14 (rename=(LOS_Count_14days=category age_cat_cal_3=age_cat))  missing norow nocol;
+   tables  age_cat_cal_3*LOS_Count_30days  / out=cat3_Freq_child_30(rename=(LOS_Count_30days=category age_cat_cal_3=age_cat))  missing norow nocol;
+run;
+
+Data Freq_child;
+set cat1_Freq_child_6 cat1_Freq_child_14 cat1_Freq_child_30
+cat2_Freq_child_6 cat2_Freq_child_14  cat2_Freq_child_30
+cat3_Freq_child_6  cat3_Freq_child_14 cat3_Freq_child_30;
+drop percent;
+run;
+
+
+/*For adults*/
+
+data post_rsv_adult_cat;
+set post_rsv_adult;
+if LOS <= 6 then LOS_Count_6days ="Less than or equal to 6 days";
+else if LOS > 6 then LOS_Count_6days ="More than 6 days";
+if LOS > 14 then LOS_Count_14days ="More than 14 days";
+else LOS_Count_14days ="Less than 14 days";
+if LOS > 30 then LOS_Count_30days ="More than 30 days";
+else LOS_Count_30days ="Less than 30 days";
+run;
+
+proc freq data=post_rsv_adult_cat;
+   tables  age_cat_cal*LOS_Count_6days  / out=cat1_Freq_adult_6(rename=(LOS_Count_6days=category age_cat_cal=age_cat )) missing nocol norow;
+   tables  age_cat_cal*LOS_Count_14days  / out=cat1_Freq_adult_14 (rename=(LOS_Count_14days=category age_cat_cal=age_cat))  missing norow nocol;
+   tables  age_cat_cal*LOS_Count_30days  / out=cat1_Freq_adult_30(rename=(LOS_Count_30days=category age_cat_cal=age_cat))  missing norow nocol;
+   tables  age_cat_cal_2*LOS_Count_6days  / out=cat2_Freq_adult_6(rename=(LOS_Count_6days=category age_cat_cal_2=age_cat)) missing norow nocol;
+   tables  age_cat_cal_2*LOS_Count_14days  / out=cat2_Freq_adult_14 (rename=(LOS_Count_14days=category age_cat_cal_2=age_cat))  missing norow nocol;
+   tables  age_cat_cal_2*LOS_Count_30days  / out=cat2_Freq_adult_30(rename=(LOS_Count_30days=category age_cat_cal_2=age_cat))  missing norow nocol;
+   tables  age_cat_cal_3*LOS_Count_6days  / out=cat3_Freq_adult_6(rename=(LOS_Count_6days=category age_cat_cal_3=age_cat)) missing norow nocol;
+   tables  age_cat_cal_3*LOS_Count_14days  / out=cat3_Freq_adult_14 (rename=(LOS_Count_14days=category age_cat_cal_3=age_cat))  missing norow nocol;
+   tables  age_cat_cal_3*LOS_Count_30days  / out=cat3_Freq_adult_30(rename=(LOS_Count_30days=category age_cat_cal_3=age_cat))  missing norow nocol;
+run;
+
+Data Freq_adult;
+set cat1_Freq_adult_6 cat1_Freq_adult_14 cat1_Freq_adult_30
+cat2_Freq_adult_6 cat2_Freq_adult_14  cat2_freq_adult_30
+cat3_Freq_adult_6  cat3_freq_adult_14 cat3_freq_adult_30;
+drop percent;
+run;
+
+
+
+
+
+
