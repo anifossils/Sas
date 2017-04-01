@@ -1,0 +1,139 @@
+
+libname data "Y:\13480_RSV\Data\ADS\Final\RSV\Data for Reporting";
+libname analysis "Y:\13480_RSV\Data\ADS\Analysis Datasets\31MAR2017";
+
+proc sql;
+create table RSV_Hosp_adults_all as
+Select 
+a.*, 
+b.admit_date,
+b.disch_date,
+b.flag_rsv,
+b.flag_resp,
+case when flag_rsv="Y" and flag_resp="Y"
+and ((admit_date lt index_date and disch_date ge index_date)
+	or (index_date le admit_date le index_date + 365))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_RSV_Hosp,
+case when flag_rsv ne "Y" and flag_resp = "Y"
+and ((admit_date lt index_date and disch_date gt index_date)
+	or (index_date - 365 le admit_date lt index_date )
+	or (index_date - 365 le disch_date lt index_date))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as pre_RESP_Hosp,
+
+case when flag_rsv ne "Y" and flag_resp = "Y"
+and (index_date le admit_date le index_date+365)
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_RESP_Hosp,
+
+case when ((flag_rsv ne "Y" and flag_resp ne "Y") or
+		(flag_rsv eq "Y" and flag_resp ne "Y"))
+and ((admit_date lt index_date and disch_date gt index_date)
+	or (index_date - 365 le admit_date lt index_date )
+	or (index_date - 365 le disch_date lt index_date))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as pre_oth_Hosp,
+
+case when ((flag_rsv ne "Y" and flag_resp ne "Y") or
+				(flag_rsv eq "Y" and flag_resp ne "Y"))
+and (index_date le admit_date le index_date+365)
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_oth_Hosp,
+
+case when ((admit_date lt index_date and disch_date gt index_date)
+	or (index_date - 365 le admit_date lt index_date )
+	or (index_date - 365 le disch_date lt index_date))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as pre_any_Hosp,
+
+case when (index_date le admit_date le index_date+365)
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_any_Hosp
+from 
+data.FINAL_INDEX_DATA_ADULTS_ELDERLY a
+left join 
+data.HOSP_ANAL_FINAL_V6_PAT b
+on a.ptid = b.ptid;
+quit;
+
+data analysis.Hosp_level_adults_all_ins_31MAR;
+	set RSV_Hosp_adults_all ;
+where admit_date ne . and disch_date >= '01JAN2008'd;
+run;
+
+proc freq data=RSV_Hosp_adults_all_1;
+tables post_rsv_Hosp*age_catn;
+run;
+
+/*****************************************/
+/***********Infants, Young Children & children***/
+/*****************************************/
+
+proc sql;
+create table RSV_Hosp_child_all as
+Select 
+a.*, 
+b.admit_date,
+b.disch_date,
+b.flag_rsv,
+b.flag_resp,
+case when flag_rsv="Y" and flag_resp="Y"
+and ((admit_date lt index_date and disch_date ge index_date)
+	or (index_date le admit_date le index_date + 365))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_RSV_Hosp,
+case when flag_rsv ne "Y" and flag_resp = "Y"
+and ((admit_date lt index_date and disch_date gt index_date)
+	or (index_date - 365 le admit_date lt index_date )
+	or (index_date - 365 le disch_date lt index_date))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as pre_RESP_Hosp,
+
+case when flag_rsv ne "Y" and flag_resp = "Y"
+and (index_date le admit_date le index_date+365)
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_RESP_Hosp,
+
+case when ((flag_rsv ne "Y" and flag_resp ne "Y") or
+		(flag_rsv eq "Y" and flag_resp ne "Y"))
+and ((admit_date lt index_date and disch_date gt index_date)
+	or (index_date - 365 le admit_date lt index_date )
+	or (index_date - 365 le disch_date lt index_date))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as pre_oth_Hosp,
+
+case when ((flag_rsv ne "Y" and flag_resp ne "Y") or
+				(flag_rsv eq "Y" and flag_resp ne "Y"))
+and (index_date le admit_date le index_date+365)
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_oth_Hosp,
+
+case when ((admit_date lt index_date and disch_date gt index_date)
+	or (index_date - 365 le admit_date lt index_date )
+	or (index_date - 365 le disch_date lt index_date))  
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as pre_any_Hosp,
+
+case when (index_date le admit_date le index_date+365)
+and ADMIT_DATE <=ENRL_EDATE then "Y"
+else "N" end as post_any_Hosp
+from 
+data.FINAL_INDEX_DATA_INFANTS_CHILD a
+left join 
+data.HOSP_ANAL_FINAL_V6_PAT b
+on a.ptid = b.ptid;
+quit; 
+
+data analysis.Hosp_level_child_all_ins_31MAR;
+	set RSV_Hosp_child_all ;
+where admit_date ne . and disch_date >= '01JAN2008'd;
+run;
+
+proc freq data=RSV_Hosp_child_all_1;
+tables age_catn*post_rsv_hosp;
+run;
+
+
+
+
