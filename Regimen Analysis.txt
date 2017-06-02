@@ -1,0 +1,763 @@
+%let day_diff=60;
+%let day_diff_D=90;
+%let blank_dur=60;
+
+Data ALL_DRUG1;
+set input.all_drug;
+generic_name=lowcase(generic_name);
+run;
+
+proc sort data = ALL_DRUG1;
+	by ptid drug_dt generic_name descending dayssup;
+run;
+
+proc freq data = ALL_DRUG1;
+	table dayssup;
+run;
+
+data ALL_DRUG2;
+	set ALL_DRUG1;
+/*	if dayssup eq . or dayssup lt 15 or dayssup gt 90 then dayssup=30;*/
+/*		if dayssup eq . then dayssup=30;*/
+run;
+
+proc sort data = ALL_DRUG2 out = ALL_DRUG(RENAME=generic_name=DRUG) nodupkey;* (drop=file) ;
+	by ptid generic_name drug_dt;
+run;
+
+/*Start : Business Rule from Line of treatment*/
+
+/* putting the claims date into start and end date*/
+data regimen1_1 ;
+	set ALL_DRUG;
+	by ptid drug;
+	retain  gap_days stdt enddt;*pre_drug_dt;
+	format drug_dt stdt enddt gap_days date9.; 
+	if first.drug then 
+	do;
+		stdt = drug_dt;
+		gap_days = drug_dt + dayssup-1;
+	end;
+
+	if  lowcase(drug) ne "dexamethasone" and first.drug ne 1 and drug_dt gt gap_days + &day_diff. -1 then	
+	do;
+		enddt = gap_days ;
+		output;
+		stdt = drug_dt;
+	end;
+
+else if lowcase(drug) eq "dexamethasone" and first.drug ne 1 and drug_dt gt gap_days + &day_diff_D.  then	
+	do;
+		enddt = gap_days ;
+		output;
+		stdt = drug_dt;
+	end;
+
+	if last.drug then
+	do;	
+		enddt = drug_dt + dayssup-1;	
+		output;
+	end;
+/*	pre_drug_dt = drug_dt;*/
+	gap_days = drug_dt + dayssup-1;	
+run;
+
+/* getting start and end date into one variable (date) */
+data regimen1_2 (drop=drug_dt gap_days dayssup );
+	set regimen1_1;
+	format date date9.;
+	if stdt ne . then do;
+	date= stdt;
+	type=1; /* 1= start*/ 
+	output;
+	end;
+	if enddt ne . then do;
+	date= enddt;
+	type=2; /* 2= end*/
+	output;
+	end;
+run;
+
+proc sort data = regimen1_2 out = regimen1_3;
+	by ptid date type;
+run;
+
+/* Lineup of treatments*/
+data regimen1_4 (drop=pre_date pre_type pre_drug type date drug stdt enddt); 
+	length new_drug $200; 
+	set regimen1_3; 
+	by ptid date type drug;
+	pre_date=lag(date); 
+	pre_type=lag(type); 
+	pre_drug=lag(drug);
+	retain new_drug; 
+	if first.ptid then call missing (new_drug, pre_date, pre_type, pre_drug);
+	if first.drug then
+	do; 
+		*IF A NEW TREATMENT STARTS;
+		if type eq 1 then 
+		do; 
+		*IF A NEW TREATMENT STARTS WHILE ANOTHER IS TAKING PLACE;
+			if pre_type=1 then
+			do;
+				sdate1=pre_date; 
+				edate1=date-1; 
+				new_drug=strip(new_drug)||','||strip(pre_drug); 
+				output; 
+			end; 
+			*IF A NEW TREATMENT STARTS WHILE A TREATMENT ENDS;
+			if pre_type=2 then
+			do; 
+				sdate1=pre_date+1; 
+				edate1=date-1; 
+				*new_drug=compress(new_drug,prev_drug);
+				new_drug=compress(tranwrd(new_drug,strip(pre_drug),'')); 
+				output; 
+			end; 
+		end; 
+
+		if type=2 then
+		do; 
+		*IF A TREATMENT THAT STARTED EARLIER ENDS;
+			if pre_type=1 then
+			do;
+				sdate1=pre_date; 
+				edate1=date; 
+				new_drug=strip(new_drug)||','||strip(pre_drug); 
+				output; 
+			end; 
+			else if type=2 then
+			do; 
+			*IF A TREATMENT THAT ENDED EARLIER ALSO ENDS WITH A DIFFERENT DRUG; 
+				sdate1=pre_date+1; 
+				edate1=date; 
+				*new_drug=compress(new_drug,prev_drug);
+				new_drug=compress(tranwrd(new_drug,strip(pre_drug),'')); 
+				output; 
+			end;
+		end;     
+	end; 
+	*IF A DRUG STARTS AND ENDS WITHOUT ANY OTHER TREATMENT PRESENT; 
+	else if pre_drug=drug and type=2 and type=1 then
+	do; 
+		sdate1=pre_date; 
+		edate1=date; 
+		new_drug=drug; 
+		output; 
+		new_drug=''; 
+	end; 
+	format sdate1 edate1 pre_date date9.; 
+run; 
+
+*GET RID OF UNNECESSARY DELIMITERS THAT ARE CREATED WHILE ADDING AND DELETING 
+ REGIMENS IN PREVIOUS DATA STEP; 
+data regimen1_5;  
+	set regimen1_4; 
+	new_drug=tranwrd(new_drug,',,,,',','); 
+	new_drug=tranwrd(new_drug,',,,',',');
+	new_drug=tranwrd(new_drug,',,',',');
+	if substr(new_drug,1,1)=',' then new_drug=strip(substr(new_drug,2));  
+	*if substr(new_drug,length(new_drug),1)='+' then new_drug=strip(substr(new_drug,1,length(new_drug)-1)); 
+	do i=1 to 30; 
+		if substr(new_drug,1,1)=',' then new_drug=strip(substr(new_drug,2));
+		new_drug=tranwrd(new_drug,',,',',');
+		if substr(new_drug,length(new_drug),1)=',' then substr(new_drug,length(new_drug),1)='';
+		new_drug=compbl(new_drug);
+	end; 
+	if new_drug='' then new_drug='blank'; 
+	if edate1 lt sdate1 then delete;
+run;
+
+proc freq data=regimen1_5;
+table new_drug;
+run;
+
+data regimen2_1 (keep= ptid new_drug edate1 sdate1 rename=(new_drug=regimen));
+    set regimen1_5 (drop = i );
+run;
+
+
+/*START: Sorting the drugs in the regimen by drug name*/
+data regimen_dlm regimen_ (drop=temp_regimen flag_dlm i dlm count); 
+   set regimen2_1 ;*(keep= ptid sdate1 edate1 stdt drug enddt i rename=(new_drug=regimen)); 
+   retain count; 
+   regimen=tranwrd(regimen,',,',','); 
+	   dlm=count(regimen,',')+1;
+	   if count(regimen,',') then count+1; 
+	   if count(regimen,',')>0 then do i=1 to dlm; 
+	      temp_regimen=scan(regimen,i,',');
+	        flag_dlm=1; 
+	      output regimen_dlm;  
+	   end; 
+     else output regimen_; 
+run; 
+
+proc sort data=regimen_dlm; 
+	by ptid count temp_regimen; 
+run; 
+
+data regimen_dlm; 
+	set regimen_dlm;
+	by ptid count temp_regimen; 
+	retain new_regimen; 
+	if first.count then new_regimen=temp_regimen; 
+	else new_regimen=strip(new_regimen)||','||strip(temp_regimen); 
+	if last.count; 
+	regimen=new_regimen; 
+	*if new_regimen ne regimen; 
+run;  
+
+data regimen2_2; 
+   set regimen_dlm (in=a drop=temp_regimen flag_dlm i dlm count new_regimen) regimen_ (in=b);
+run;
+/*END: Sorting the drugs in the regimen by drug name and line of treatment*/
+
+/*Remove Other cancer drugs and steroids if a regimen consists of core cancer drugs. Remove steroids from other cancer regimens */
+
+data regimen2_3_all ;*(drop=m1 m2 m3 m4 m5 m6 m7 m8 o1 o2 o3 o4 o5 s1 s2);
+	set regimen2_2;
+if (index (regimen,'thalidomide') gt 0 or
+   index (regimen,'bortezomib') gt 0 or
+   index (regimen,'lenalidomide') gt 0 or
+   index (regimen,'melphalan') gt 0 or
+   index (regimen,'pomalidomide') gt 0 or
+   index (regimen,'carfilzomib') gt 0 or
+   index (regimen,'cyclophosphamide') gt 0 or
+   index (regimen,'dexamethasone') gt 0)
+then flag='core ';
+
+else if (index (regimen,'bendamustine') gt 0 or
+   index (regimen,'doxorubicin') gt 0 or
+   index (regimen,'etoposide') gt 0 or
+   index (regimen,'vincristine') gt 0 or
+   index (regimen,'vorinostat') gt 0) 
+then flag='other';
+
+else if (index (regimen,'prednisone') gt 0 or
+	     index (regimen,'prednisolone') gt 0) 
+then flag='ster ';
+			if index(lowcase(regimen),"bortezomib") 		gt 0 then m1="bortezomib"; 
+			if index(lowcase(regimen),"carfilzomib")   		gt 0 then m2="carfilzomib";
+			if index(lowcase(regimen),"cyclophosphamide")	gt 0 then m3="cyclophosphamide"; 
+			if index(lowcase(regimen),"dexamethasone") 		gt 0 then m4="dexamethasone"; 
+			if index(lowcase(regimen),"lenalidomide")   	gt 0 then m5="lenalidomide";
+			if index(lowcase(regimen),"melphalan") 			gt 0 then m6="melphalan";
+			if index(lowcase(regimen),"pomalidomide")   	gt 0 then m7="pomalidomide";
+			if index(lowcase(regimen),"thalidomide") 		gt 0 then m8="thalidomide";
+			if index(lowcase(regimen),"bendamustine") 		gt 0 then o1="bendamustine"; 
+			if index(lowcase(regimen),"doxorubicin")  		gt 0 then o2="doxorubicin"; 
+			if index(lowcase(regimen),"etoposide")  		gt 0 then o3="etoposide"; 
+			if index(lowcase(regimen),"vincristine")  		gt 0 then o4="vincristine";
+			if index(lowcase(regimen),"vorinostat") 		gt 0 then o5="vorinostat"; 
+ 			if index(lowcase(regimen),"prednisone")  		gt 0 then s1="prednisone"; 
+			if index(lowcase(regimen),"prednisolone")  		gt 0 then s2="prednisolone"; 
+regimen_cat=regimen;
+
+if flag='core ' then do;
+	regimen_cat = catx(',',m1, m2, m3, m4, m5,m6, m7, m8); 
+end; 
+
+else if flag='other' then do;
+	regimen_cat = catx(',',o1,o2,o3,o4,o5); 
+end; 
+
+else if flag='ster ' then do;
+	regimen_cat = catx(',',s1, s2); 
+end; 
+
+if regimen eq "blank" then regimen_cat= "blank";
+
+old_regimen= regimen;
+
+drop regimen;
+rename regimen_cat=regimen;
+run;
+
+proc sort data=regimen2_3_all out=regimen2_3_all1(rename=(sdate1=start edate1=end));
+	by ptid regimen sdate1;
+quit;
+
+/* Combine identical regimens occurring immediately after each other */
+data regimen2_3_all2 (drop=prev_end end start regimen);
+     set regimen2_3_all1;
+     by ptid regimen start;
+     retain new_start prev_end new_end new_reg;
+     format new_start new_end prev_end date9.;
+     if first.regimen then
+     do;
+           new_start=start;
+           prev_end=end;
+           new_reg=regimen;
+     end;
+     if first.regimen ne 1 and start-prev_end ne 1 then
+     do;
+           new_end=prev_end;
+           output;
+           new_start=start;
+     end;
+     if last.regimen then
+     do;
+           new_end=end;
+           output;
+     end;
+     prev_end=end;
+run;
+
+/* 2A: Start: Step Up -Step Down */
+proc sort data=regimen2_3_all2 out=regimen2_4 (rename=(new_start=start new_end=end new_reg=regimen));
+	by ptid new_start;
+quit;
+
+proc transpose data = regimen2_4 out = trans_strt prefix = strt;
+	by ptid;
+	var start;
+run;
+
+proc transpose data =  regimen2_4  out = trans_end prefix = ends;
+	by ptid;
+	var end;
+run;
+
+proc transpose data =  regimen2_4  out = trans_reg prefix = reg;
+	by ptid;
+	var regimen;
+run;
+
+data regimen2_5 (drop = _name_);
+	merge trans_strt trans_end trans_reg;
+	by ptid;
+run;
+
+data regimen2_6  ;
+	set regimen2_5 ;
+	array strt(41) strt1-strt41;
+	array ends(41) ends1-ends41;
+	array reg(41) $ reg1-reg41;
+    z= N(of strt:);
+	do i = 1 to z ;
+		l=0;
+		if strt(i) ne . and reg(i) ne 'blank' and (ends(i)-strt(i)+1) le 30 then
+		/*Merge if succeeding regimen is step up or step down*/
+		do;
+			cnt1=count(reg(i),',')+1;
+			cnt2=count(reg(i+1),',')+1;
+			match_cnt=0;
+			do m = 1 to cnt1;
+				do n = 1 to cnt2;
+					if scan (compress(reg(i)),m,',') = scan (compress(reg(i+1)),n,',') then
+					match_cnt=match_cnt +1;
+				end;
+			end;
+			if  match_cnt eq min(cnt1, cnt2) then
+			do;
+				if (ends(i)-strt(i)) < (ends(i+1)-strt(i+1)) then reg(i) = reg(i+1);
+
+/*MT: Added on June 29, 2016 - checking if duration of 2 regimen is equal then regimen with more drugs will be ouyput regimen*/
+/*	else if (ends(i)-strt(i)) = (ends(i+1)-strt(i+1)) then do;*/
+/*		if cnt1 >= cnt2 then reg(i) = reg(i);*/
+/*		else if cnt1 < cnt2 then reg(i) = reg(i+1); */
+/*	end;*/
+/*end of modification*/*/;
+
+				ends(i) = ends(i+1);
+				l = 100;
+				do k = i+1  to z - 1 ;
+					strt(k) = strt(k+1);
+					ends(k) = ends(k+1);
+					reg(k ) = reg(k+1);
+				end;
+				strt(z) = .;
+				ends(z) = .;
+				reg(z) = '';            
+				if l = 100  then i = i -1;
+			end;
+		
+		/*Merge if preceding regimen is step up or step down*/  
+		if l ne 100 and i ge 2 then
+			do;
+				cnt1=count(reg(i-1),',')+1;
+				cnt2=count(reg(i),',')+1;
+				match_cnt=0;
+				do m = 1 to cnt1;
+					do n = 1 to cnt2;
+						if scan (compress(reg(i-1)),m,',') = scan (compress(reg(i)),n,',') then
+							match_cnt=match_cnt +1;
+					end;
+				end;
+				if  match_cnt eq min(cnt1, cnt2) then
+				
+				do;
+					if (ends(i-1)-strt(i-1)) < (ends(i)-strt(i)) then reg(i-1) = reg(i);
+
+/*MT: Added on June 29, 2016 - checking if duration of 2 regimen is equal then regimen with more drugs will be ouyput regimen*/
+/*	else if (ends(i-1)-strt(i-1)) = (ends(i)-strt(i)) then do;*/
+/*		if cnt1 >= cnt2 then reg(i-1) = reg(i-1);*/
+/*		else if cnt1 < cnt2 then reg(i-1) = reg(i); */
+/*end;*/
+/*end of modification*/
+
+					ends(i-1) = ends(i);
+					l = 100;
+					do k = i  to z - 1;
+						strt(k) = strt(k+1);
+						ends(k) = ends(k+1);
+						reg(k ) = reg(k+1);
+					end;
+					strt(z) = .;
+					ends(z) = .;
+					reg(z) = '';            
+					if l = 100  then i = i -2;
+				end;
+			end;
+		end;
+	end;
+run;
+
+data regimen2_7 (drop = strt1-strt41 reg1-reg41 ends1-ends41 i z k l m n cnt1 cnt2 match_cnt);
+	set regimen2_6;
+	array strt(41) strt1-strt41;
+	array ends(41) ends1-ends41;
+	array reg(41) $ reg1-reg41;
+	format start end date7.;
+	do i = 1 to N( of strt:);
+		regimen = reg(i);
+		start = strt(i);
+		end = ends(i);
+dur=end-start + 1; * to chk;
+		if regimen ='' then do;
+		end;
+		else output;
+	end;
+run;
+
+/*	2B	*/
+proc sort data= regimen2_7 out=regimen2_8; *(rename=(sdate1=start edate1=end));
+	by ptid regimen start;
+run;
+
+
+/* Combine identical regimens occurring immediately after each other */
+data regimen2_9 (drop=prev_end end start regimen);
+     set regimen2_8;
+     by ptid regimen start;
+     retain new_start prev_end new_end new_reg;
+     format new_start new_end prev_end date9.;
+     if first.regimen then
+     do;
+           new_start=start;
+           prev_end=end;
+           new_reg=regimen;
+     end;
+     if first.regimen ne 1 and start-prev_end ne 1 then
+     do;
+           new_end=prev_end;
+           output;
+           new_start=start;
+     end;
+     if last.regimen then
+     do;
+           new_end=end;
+           output;
+     end;
+     prev_end=end;
+run;
+
+proc sort data=regimen2_9;
+	by ptid new_start;
+run;
+
+/*delete the lot 1 if it is blank*/
+/* applying Rule 8.2.3 (30 days rule for other/steriods)*/
+data regimen2_10 (rename=(new_start=start new_end=end new_reg=reg)); 
+     set regimen2_9;
+	 by ptid;
+	 if first.ptid eq 1 and lowcase(new_reg) eq "blank" then delete;
+	 dur=new_end - new_start +1;
+if (index (new_reg,'thalidomide') gt 0 or
+   index (new_reg,'bortezomib') gt 0 or
+   index (new_reg,'lenalidomide') gt 0 or
+   index (new_reg,'melphalan') gt 0 or
+   index (new_reg,'pomalidomide') gt 0 or
+   index (new_reg,'carfilzomib') gt 0 or
+   index (new_reg,'cyclophosphamide') gt 0 or
+   index (new_reg,'dexamethasone') gt 0)
+then flag='core ';
+else flag='other';
+
+/*	 if flag eq 'other' and dur lt 30 then new_reg = "blank";*/
+	 if flag eq 'other' and dur le 30 then new_reg = "blank";
+run;
+
+proc sort data=regimen2_10
+     out=regimen2_11;
+     by ptid start reg;
+quit;
+
+/*3: */
+/* finding the successive dates (reverse lag)*/
+data regimen2_12 (keep=ptid next_start next_end next_reg start );
+	_n_ ++ 1;
+	if _n_ <= n then do;
+	set regimen2_11 point=_n_;
+	next_start = start;
+	next_end = end;
+	next_reg = reg;
+	end;
+	else do; 
+	next_start = .;
+	next_end = .;
+	next_reg = "";
+	end;
+	set regimen2_11 nobs = n;
+	format next_start next_end date9.;
+run; 
+
+data regimen3_1; 
+	merge regimen2_11 regimen2_12;
+	by ptid;
+run;
+
+proc sort data=regimen3_1
+     out=regimen3_2;
+     by ptid start reg;
+quit;
+
+data regimen3_3; 
+	set regimen3_2 ;
+	by ptid start reg ;
+	format start end last_start last_end next_start date9.; 
+	last_reg=lag(reg);
+	last_start=lag(start);
+	last_end=lag(end); 
+	if first.ptid or last.ptid then call missing (last_reg, next_reg, last_start, last_end, next_start, next_end);
+run;
+
+data regimen3_4;
+	set regimen3_3;
+	by ptid start reg ;
+	if not (first.ptid or last.ptid);
+	if compress(lowcase(reg)) eq "blank" and (compress(lowcase(last_reg)) ne "blank") and
+		last_reg eq next_reg and (end-start +1 lt &blank_dur.);
+run;
+
+data regimen3_4_merge (keep= ptid new_start new_end new_reg);
+     set regimen3_4;
+     by ptid start;
+     retain new_start lag_next_end new_end lag_next_reg;
+     format new_start new_end lag_next_end date9.;
+     if first.ptid then
+     do;
+           new_start=last_start;
+           lag_next_end=next_end;
+           lag_next_reg=next_reg;
+     end;
+     if first.ptid ne 1 and (lag_next_end ne last_end or lag_next_reg ne last_reg) then
+     do;
+           new_end=lag_next_end;
+		   new_reg=lag_next_reg;
+           output;
+           new_start=last_start;
+     end;
+     if last.ptid then
+     do;
+           new_end=next_end;
+		   new_reg=next_reg;
+           output;
+     end;
+     lag_next_end=next_end;
+run;
+
+/*selecting regimens which were merged*/
+proc sql;
+	create table regimen3_5 as select
+	a.* from regimen2_10 as A, regimen3_4_merge as B 
+	where a.ptid=b.ptid and 
+		(a.start between b.new_start and b.new_end);
+quit;
+
+proc sort data=regimen3_5 out=regimen3_5;
+	by _all_;
+run;
+
+proc sort data=regimen2_10 out=regimen2_10;
+	by _all_;
+run;
+
+/*selecting regimens which were not merged*/
+data regimen3_6;
+	merge regimen2_10(in=a) regimen3_5(in=b);
+	by _all_;
+	if a and not b ;
+run;
+
+data regimen3_7;
+	set	
+		regimen3_6
+		regimen3_4_merge (rename=(new_start=start new_end=end new_reg=reg));
+run;
+
+proc sort data=regimen3_7;
+	by ptid start;
+quit;
+
+proc transpose data = regimen3_7 out = trans_strt prefix = strt;
+	by ptid;
+	var start;
+run;
+
+proc transpose data = regimen3_7 out = trans_end prefix = ends;
+	by ptid;
+	var end;
+run;
+
+proc transpose data = regimen3_7 out = trans_reg prefix = reg;
+	by ptid;
+	var reg;
+run;
+
+data regimen3_8 (drop = _name_);
+	merge trans_strt trans_end trans_reg;
+	by ptid;
+run;
+
+data regimen3_9;
+	set regimen3_8 ;
+	array strt(25) strt1-strt25;
+	array ends(25) ends1-ends25;
+	array reg(25) $ reg1-reg25;
+	z= N(of strt:);
+			
+	/* the below part merges preceding and succeding regimen if one being stepup or step down of other, 
+	and blank regimen to be less than 30 days*/
+
+	do i = 2  to z ;
+		y = 0;
+		if lowcase(reg(i)) = 'blank' and lowcase(reg(i-1)) ne 'blank' and lowcase(reg(i+1)) ne 'blank' and strt(i) ne . then
+			do;
+				if ends(i) - strt(i)+1 lt 30 then
+					do;
+
+					/* Checking if a regimen is subset of preceding or succeeding regimen*/
+						cnt1=count(reg(i),',')+1;
+						cnt2=count(reg(i+1),',')+1;
+						match_cnt=0;
+						do m = 1 to cnt1;
+							do n = 1 to cnt2;
+								if scan (compress(reg(i)),m,',') = scan (compress(reg(i+1)),n,',') then
+									match_cnt=match_cnt +1;
+							end;
+						end;
+						if  match_cnt eq min(cnt1, cnt2)
+							and	(ends(i-1)-strt(i-1)+1 < 15 or ends(i+1)-strt(i+1)+1 < 15 ) then
+							do;
+								if (ends(i-1)-strt(i-1)) < (ends(i+1)-strt(i+1)) then reg(i-1) = reg(i+1);
+
+/*MT: Added on June 29, 2016 - checking if duration of 2 regimen is equal then regimen with more drugs will be ouyput regimen*/
+/*	else if (ends(i-1)-strt(i-1)) = (ends(i+1)-strt(i+1)) then do;*/
+/*		if cnt1 >= cnt2 then reg(i-1) = reg(i-1);*/
+/*		else if cnt1 < cnt2 then reg(i-1) = reg(i+1); end;*/
+/*end of modification*/
+
+								ends(i-1) = ends(i+1);
+								y = 100;
+								do k = i  to z - 2 ;
+									strt(k) = strt(k+2);
+									ends(k) = ends(k+2);
+									reg(k ) = reg(k+2);
+								end;
+								do k =  z-1 to Z;
+									strt(k ) = .;
+									ends(k ) = .;
+									reg(k ) = '';
+								end;	
+							end;
+					end;
+/**/
+
+else if ends(i) - strt(i)+1 lt 60  and ends(i) - strt(i)+1 ge 30 then
+					do;
+
+					/* Checking if a regimen is subset of preceding or succeeding regimen*/
+						cnt1=count(reg(i),',')+1;
+						cnt2=count(reg(i+1),',')+1;
+						match_cnt=0;
+						do m = 1 to cnt1;
+							do n = 1 to cnt2;
+								if scan (compress(reg(i)),m,',') = scan (compress(reg(i+1)),n,',') then
+									match_cnt=match_cnt +1;
+							end;
+						end;
+						if  match_cnt eq min(cnt1, cnt2) then
+/*							and	(ends(i-1)-strt(i-1)+1 < 15 or ends(i+1)-strt(i+1)+1 < 15 ) then*/
+							do;
+								if (ends(i-1)-strt(i-1)) < (ends(i+1)-strt(i+1)) then reg(i-1) = reg(i+1);
+
+/*MT: Added on June 29, 2016 - checking if duration of 2 regimen is equal then regimen with more drugs will be ouyput regimen*/
+/*	else if (ends(i-1)-strt(i-1)) = (ends(i+1)-strt(i+1)) then do;*/
+/*		if cnt1 >= cnt2 then reg(i-1) = reg(i-1);*/
+/*		else if cnt1 < cnt2 then reg(i-1) = reg(i+1); end;*/
+/*end of modification*/
+
+								ends(i-1) = ends(i+1);
+								y = 100;
+								do k = i  to z - 2 ;
+									strt(k) = strt(k+2);
+									ends(k) = ends(k+2);
+									reg(k ) = reg(k+2);
+								end;
+								do k =  z-1 to Z;
+									strt(k ) = .;
+									ends(k ) = .;
+									reg(k ) = '';
+								end;	
+							end;
+					end;
+/**/
+		end;
+			if y = 100 then i = i -1;
+	end;
+run;
+
+data regimen3_10 (drop = strt1-strt25 reg1-reg25 ends1-ends25 i z k y m n cnt1 cnt2 match_cnt);
+	set regimen3_9;
+	array strt(25) strt1-strt25;
+	array ends(25) ends1-ends25;
+	array reg(25) $ reg1-reg25;
+	format start end date7.;
+	do i = 1 to N( of strt:);
+		regimen = reg(i);
+		start = strt(i);
+		end = ends(i);
+		if regimen ='' then do;
+		end;
+		else output;
+	end;
+run;
+
+data regimen3_11;
+	set regimen3_10;
+	where regimen ne "blank" ;
+	 duration=sum(end,-1*start)+1;
+run;
+
+/* numbering the LOTs*/
+data final.regimen_final;
+	set regimen3_11;
+	by ptid; 
+	retain lot; 
+	if first.ptid then lot=0; 
+	lot+1;
+run;
+
+proc freq data=final.regimen_final;
+table regimen*lot / norow nocol nopercent;
+run;
+
+/*End of Regimen analysis*/
+
+
+
+
+
+
+
