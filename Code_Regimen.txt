@@ -1,0 +1,626 @@
+/*Import raw data*/
+Proc import datafile="C:\Users\sasuser\Desktop\CIA\drug.csv" out=drug
+dbms=csv replace; 
+getnames=yes;
+guessingrows=13933;
+run;
+
+Data all_drug;
+set drug;
+ptid=put(patient_id,$12.);
+drop Patient_ID;
+rename Days_Supply=dayssup Drug_Date=drug_dt Drug_Name=generic_name;
+run;
+
+data ALL_DRUG2;
+	set ALL_DRUG;
+	if dayssup eq .  then dayssup=30;
+run;
+
+
+Proc sql;
+select distinct generic_name from ALL_DRUG2;
+quit;
+
+
+
+%let day_diff=60;
+
+%macro drg(dr=);
+data &dr; ;
+	set ALL_DRUG2;
+	by ptid;
+	where generic_name = "&dr";
+	format dt_lag date7.;
+	dt_lag = lag(drug_dt);
+	if first.ptid then dt_lag = .;
+	if dt_lag ne . then gap = drug_dt - dt_lag;
+run;
+%mend drg;
+
+%drg(dr=cyclophosphamide);
+%drg(dr=danazol);
+%drg(dr=dexamethasone);
+%drg(dr=erythropoietins);
+%drg(dr=fluoxymesterone);
+%drg(dr=fludarabine);
+%drg(dr=hydroxyurea);
+%drg(dr=lenalidomide);
+%drg(dr=melphalan);
+%drg(dr=oxymetholone);
+%drg(dr=prednisolone);
+%drg(dr=ruxolitinib);
+%drg(dr=thalidomide);
+
+
+
+/*b)	A drug used multiple times with a gap of more or equal than 60 days will have multiple treatment periods*/
+/*(start dates and end dates)   */
+
+%macro drg1(dr=);
+
+data &dr.1(keep = ptid reg start_date end_date);
+	set &dr.(keep = ptid generic_name drug_dt dayssup);
+	retain prev_drg_dt prev_drg_dt_days start_date end_date;
+	format prev_drg_dt prev_drg_dt_days start_date end_date date7.;
+	by ptid;
+	if first.ptid then 
+	do;
+		start_date = drug_dt;
+				prev_drg_dt = drug_dt;
+			 prev_drg_dt_days = drug_dt + dayssup-1;
+	end;
+
+	if drug_dt gt prev_drg_dt_days + &day_diff. -1 then	
+	do;
+		end_date = prev_drg_dt_days ;
+		reg = generic_name;
+		output;
+		start_date = drug_dt;
+	end;
+
+	if last.ptid then
+	do;	
+				end_date = drug_dt + dayssup-1;	
+		reg = generic_name;
+		output;
+	end;
+
+	prev_drg_dt = drug_dt;
+	prev_drg_dt_days = drug_dt + dayssup-1;	
+run;
+
+%mend drg1;
+
+
+%drg1(dr=cyclophosphamide);
+%drg1(dr=danazol);
+%drg1(dr=dexamethasone);
+%drg1(dr=erythropoietins);
+%drg1(dr=fluoxymesterone);
+%drg1(dr=fludarabine);
+%drg1(dr=hydroxyurea);
+%drg1(dr=lenalidomide);
+%drg1(dr=melphalan);
+%drg1(dr=oxymetholone);
+%drg1(dr=prednisolone);
+%drg1(dr=ruxolitinib);
+%drg1(dr=thalidomide);
+
+data allreg_drug;
+	set
+cyclophosphamide1
+danazol1
+dexamethasone1
+erythropoietins1
+fludarabine1
+fluoxymesterone1
+hydroxyurea1
+lenalidomide1
+melphalan1
+oxymetholone1
+prednisolone1
+ruxolitinib1
+thalidomide1
+;
+rename end_date=enddt start_date=stdt reg=drug;
+run;
+
+proc sort data=allreg_drug;
+	by ptid stdt drug;
+run;
+
+
+
+
+/* getting start and end date into one variable (date) */
+data regimen1_2 (drop=drug_dt gap_days dayssup );
+	set allreg_drug;
+	format date date9.;
+	if stdt ne . then do;
+	date= stdt;
+	type=1; /* 1= start*/ 
+	output;
+	end;
+	if enddt ne . then do;
+	date= enddt;
+	type=2; /* 2= end*/
+	output;
+	end;
+run;
+
+proc sort data = regimen1_2 out = regimen1_3;
+	by ptid date type drug;
+run;
+
+/* Lineup of treatments*/
+data regimen1_4 (drop=pre_date pre_type pre_drug type date drug stdt enddt); 
+	length new_drug $200; 
+	set regimen1_3; 
+	by ptid date type drug;
+	pre_date=lag(date); 
+	pre_type=lag(type); 
+	pre_drug=lag(drug);
+	retain new_drug; 
+	if first.ptid then call missing (new_drug, pre_date, pre_type, pre_drug);
+	if first.drug then
+	do; 
+		*IF A NEW TREATMENT STARTS;
+		if type eq 1 then 
+		do; 
+		*IF A NEW TREATMENT STARTS WHILE ANOTHER IS TAKING PLACE;
+			if pre_type=1 then
+			do;
+				sdate1=pre_date; 
+				edate1=date-1; 
+				new_drug=strip(new_drug)||','||strip(pre_drug); 
+				output; 
+			end; 
+			*IF A NEW TREATMENT STARTS WHILE A TREATMENT ENDS;
+			if pre_type=2 then
+			do; 
+				sdate1=pre_date+1; 
+				edate1=date-1; 
+				*new_drug=compress(new_drug,prev_drug);
+				new_drug=compress(tranwrd(new_drug,strip(pre_drug),'')); 
+				output; 
+			end; 
+		end; 
+
+		if type=2 then
+		do; 
+		*IF A TREATMENT THAT STARTED EARLIER ENDS;
+			if pre_type=1 then
+			do;
+				sdate1=pre_date; 
+				edate1=date; 
+				new_drug=strip(new_drug)||','||strip(pre_drug); 
+				output; 
+			end; 
+			else if type=2 then
+			do; 
+			*IF A TREATMENT THAT ENDED EARLIER ALSO ENDS WITH A DIFFERENT DRUG; 
+				sdate1=pre_date+1; 
+				edate1=date; 
+				*new_drug=compress(new_drug,prev_drug);
+				new_drug=compress(tranwrd(new_drug,strip(pre_drug),'')); 
+				output; 
+			end;
+		end;     
+	end; 
+	*IF A DRUG STARTS AND ENDS WITHOUT ANY OTHER TREATMENT PRESENT; 
+	else if pre_drug=drug and type=2 and type=1 then
+	do; 
+		sdate1=pre_date; 
+		edate1=date; 
+		new_drug=drug; 
+		output; 
+		new_drug=''; 
+	end; 
+	format sdate1 edate1 pre_date date9.; 
+run; 
+
+*GET RID OF UNNECESSARY DELIMITERS THAT ARE CREATED WHILE ADDING AND DELETING 
+ REGIMENS IN PREVIOUS DATA STEP; 
+data regimen1_5;  
+	set regimen1_4; 
+	new_drug=tranwrd(new_drug,',,,,',','); 
+	new_drug=tranwrd(new_drug,',,,',',');
+	new_drug=tranwrd(new_drug,',,',',');
+	if substr(new_drug,1,1)=',' then new_drug=strip(substr(new_drug,2));  
+	*if substr(new_drug,length(new_drug),1)='+' then new_drug=strip(substr(new_drug,1,length(new_drug)-1)); 
+	do i=1 to 30; 
+		if substr(new_drug,1,1)=',' then new_drug=strip(substr(new_drug,2));
+		new_drug=tranwrd(new_drug,',,',',');
+		if substr(new_drug,length(new_drug),1)=',' then substr(new_drug,length(new_drug),1)='';
+		new_drug=compbl(new_drug);
+	end; 
+	if new_drug='' then new_drug='blank'; 
+	if edate1 lt sdate1 then delete;
+	*if a regimen contains ruxolitinib with other drugs then make that regimen as ruxolitinib;
+	if index(new_drug,"ruxolitinib")>0 then new_drug = "ruxolitinib" ;
+	else new_drug=new_drug;
+run;
+
+
+/*START: Sorting the drugs in the regimen by drug name*/
+data regimen_dlm regimen_ (drop=temp_regimen flag_dlm i dlm count); 
+   set regimen2_1 ;*(keep= ptid sdate1 edate1 stdt drug enddt i rename=(new_drug=regimen)); 
+   retain count; 
+   regimen=tranwrd(regimen,',,',','); 
+	   dlm=count(regimen,',')+1;
+	   if count(regimen,',') then count+1; 
+	   if count(regimen,',')>0 then do i=1 to dlm; 
+	      temp_regimen=scan(regimen,i,',');
+	        flag_dlm=1; 
+	      output regimen_dlm;  
+	   end; 
+     else output regimen_; 
+run; 
+
+proc sort data=regimen_dlm; 
+	by ptid count temp_regimen; 
+run; 
+
+data regimen_dlm; 
+	set regimen_dlm;
+	by ptid count temp_regimen; 
+	retain new_regimen; 
+	if first.count then new_regimen=temp_regimen; 
+	else new_regimen=strip(new_regimen)||','||strip(temp_regimen); 
+	if last.count; 
+	regimen=new_regimen; 
+	*if new_regimen ne regimen; 
+run;  
+
+data regimen2_2; 
+   set regimen_dlm (in=a drop=temp_regimen flag_dlm i dlm count new_regimen) regimen_ (in=b);
+run;
+/*END: Sorting the drugs in the regimen by drug name and line of treatment*/
+
+
+proc sql;
+create table Regimen_Step3 as
+select ptid, regimen, sdate1 as sdate, edate1 as edate
+from regimen2_2;
+quit;
+
+proc sort data=Regimen_Step3 out=regimen2_4(rename=(sdate=start edate=end));
+by ptid sdate edate regimen;
+run;
+
+
+
+
+/*Starting step 4 of line of treatment analysis*/
+
+
+/*Take tranpose to get multiple start dates, end dates and regimens for a patient in a single row*/
+proc transpose data = regimen2_4 out = trans_strt prefix = strt;
+	by ptid;
+	var start;
+run;
+
+
+proc transpose data =  regimen2_4  out = trans_end prefix = ends;
+	by ptid;
+	var end;
+run;
+
+proc transpose data =  regimen2_4  out = trans_reg prefix = reg;
+	by ptid;
+	var regimen;
+run;
+
+/*Merge all the three transposed datasets, drop _name_ that represents name of former variables*/
+
+data regimen2_5 (drop = _name_);
+	merge trans_strt trans_end trans_reg;
+	by ptid;
+run;
+
+/*A variable max_reg created to identify maximum number of regimens present, to be used in defining dimension of array*/
+proc sql;
+select max(cnt) into : max_reg 
+from 
+(select count(ptid)as cnt
+from
+regimen2_4
+group by ptid);
+quit;
+
+
+data regimen2_6 (drop= z i l cnt1 cnt2 match_cnt m n k duration_Comb);
+	set regimen2_5;
+	array strt(&max_reg.);
+	array ends(&max_reg.);
+	array reg(&max_reg.);
+    z= N(of strt:);
+	do i = 1 to z ;
+		l=0;
+/*l used as a flag to identify whether a step up- step down merging occred*/
+
+/*Modified on 17 May, 2017. If regimen contains paclitaxel, then duration of regimen for combining */
+/*should be <=60. Duration <=30 for all the other cases*/
+
+duration_Comb=30;
+
+
+if strt(i) ne . and compress(upcase(reg(i))) ne 'BLANK' and (ends(i)-strt(i)+1) le duration_Comb then
+		/*Merge if succeeding regimen is step up or step down*/
+		do;
+/*cnt1 counts number of drugs in a regimen and cnt2 counts number of drugs in succeeding regimen*/
+			cnt1=count(reg(i),',')+1;
+			cnt2=count(reg(i+1),',')+1;
+			match_cnt=0;
+/*Match_cnt is used to identify numner of drugs matching between regimen 1 and 2*/
+/*Since drugs in a regimen are sorted alphabetically, we can directly compare drug in one regimen with a drug in the same position in */
+/*succeeding regimen*/
+			do m = 1 to cnt1;
+				do n = 1 to cnt2;
+					if scan (compress(upcase(reg(i))),m,',') = scan (compress(upcase(reg(i+1))),n,',') then
+					match_cnt=match_cnt +1;
+				end;
+			end;
+/*If match_cnt is equal to minimum of cnt1 and cnt2, it indicates subset or superset*/
+/*In that case regimen with longer duration is the prevailing regimen, if difference between duration of two regimens is more
+			than 7 days*/
+/*If two regimens are of euqal duration, or if difference between duration of two regimens is
+less than or equal to 7 days, regimen with more drugs is the prevailing regimen*/
+			if  match_cnt eq min(cnt1, cnt2) then
+			do;
+				if (ends(i)-strt(i)) < (ends(i+1)-strt(i+1)) 
+				and ((ends(i+1)-strt(i+1))- (ends(i)-strt(i))) > 7
+				then reg(i) = reg(i+1);
+
+
+				else if (ends(i)-strt(i)) = (ends(i+1)-strt(i+1)) 
+				or abs((ends(i+1)-strt(i+1))- (ends(i)-strt(i))) <= 7
+				then do;
+					if cnt1 >= cnt2 then reg(i) = reg(i);
+					else if cnt1 < cnt2 then reg(i) = reg(i+1);
+				end;
+
+
+/*If none the conditions satisfy regimen(i) remains unchanged*/
+				ends(i) = ends(i+1);
+				l = 100;
+/*l=100 indicates merging of two regimens*/
+				do k = i+1  to z - 1;
+					strt(k) = strt(k+1);
+					ends(k) = ends(k+1);
+					reg(k ) = reg(k+1);
+				end;
+				strt(z) = .;
+				ends(z) = .;
+				reg(z) = '';
+/*If a regimen is merged with succeeding regimen, we have to check it again for step up or step down, hence i=i-1 */
+				if l = 100  then i = i -1;
+			end;
+		
+/*Merge if preceding regimen is step up or step down*/  
+/*Only if that regimen has not been merged with succeeding regimen, i.e. l ne 100*/
+/*Can be done from second regimen onwards*/
+		if l ne 100 and i ge 2 then
+			do;
+/*cnt1 counts number of drugs in preceeding regimen and cnt2 counts number of drugs in current regimen*/
+				cnt1=count(reg(i-1),',')+1;
+				cnt2=count(reg(i),',')+1;
+				match_cnt=0;
+				do m = 1 to cnt1;
+					do n = 1 to cnt2;
+						if scan (compress(upcase(reg(i-1))),m,',') = scan (compress(upcase(reg(i))),n,',') then
+							match_cnt=match_cnt +1;
+					end;
+				end;
+/*If match_cnt is equal to minimum of cnt1 and cnt2, it indicates subset or superset*/
+/*Update the preceeding regimen in case of step up or step down*/
+/*In that case regimen with longer duration is the prevailing regimen,
+	if difference between duration of two regimens is more than 7 days*/
+/*If two regimens are of euqal duration, or difference between duraiton of two regimens is less than or equal to 7 days
+	regimen with more drugs is the prevailing regimen*/
+
+				if  match_cnt eq min(cnt1, cnt2) then
+				
+				do;
+					if (ends(i-1)-strt(i-1)) < (ends(i)-strt(i))
+					and ((ends(i)-strt(i))- (ends(i-1)-strt(i-1)))> 7
+					then reg(i-1) = reg(i);
+
+					else if (ends(i-1)-strt(i-1)) = (ends(i)-strt(i))
+					or abs((ends(i-1)-strt(i-1))- (ends(i)-strt(i))) <= 7
+					then do;
+						if cnt1 >= cnt2 then reg(i-1) = reg(i-1);
+						else if cnt1 < cnt2 then reg(i-1) = reg(i); 
+					end;
+/*If none of the conditions satisfied, regimen(i-1) remains as it is*/
+					ends(i-1) = ends(i);
+					l = 100;
+					do k = i  to z - 1;
+						strt(k) = strt(k+1);
+						ends(k) = ends(k+1);
+						reg(k ) = reg(k+1);
+					end;
+					strt(z) = .;
+					ends(z) = .;
+					reg(z) = '';          
+/*In case of merging with preceeding regimen, we again have to examine the preceeding regimen for step up and step down*/
+/*Hence i=i-2*/ 
+					if l = 100  then i = i -2;
+				end;
+			end;
+
+		end;
+	end;
+run;
+
+
+/*Bring back various start dates, end dates and regimens into respective columns*/
+data regimen2_7 (drop = strt: ends: reg: i rename=(new_regimen=regimen));
+	set regimen2_6;
+	array strt(&max_reg.);
+	array ends(&max_reg.);
+	array reg(&max_reg.);
+	format start end date7.;
+	do i = 1 to N( of strt:);
+		new_regimen = reg(i);
+		start = strt(i);
+		end = ends(i);
+		if new_regimen ='' then do;
+		end;
+		else output;
+	end;
+run;
+
+
+proc sort data= regimen2_7 out=regimen2_8;
+	by ptid regimen start;
+run;
+
+
+/*Combine same regimens occuring without any gap*/
+
+data regimen2_9 (drop=prev_end end start regimen);
+     set regimen2_8;
+     by ptid regimen start;
+     retain new_start prev_end new_end new_reg;
+     format new_start new_end prev_end date9.;
+     if first.regimen then
+     do;
+           new_start=start;
+           prev_end=end;
+           new_reg=regimen;
+     end;
+/*if start-pre_end=1, it indicates that regimen is continuing witout any gaps*/
+/*So two entries shoud be merged*/
+/*Update end date if start-prev_end ne 1*/
+     if first.regimen ne 1 and start-prev_end ne 1 then
+     do;
+           new_end=prev_end;
+           output;
+           new_start=start;
+     end;
+     if last.regimen then
+     do;
+           new_end=end;
+           output;
+     end;
+     prev_end=end;
+run;
+
+proc sort data=regimen2_9;
+	by ptid new_start;
+run;
+
+
+/*If first regimen is a blank, then delete*/
+
+data regimen2_10 (rename=(new_start=start new_end=end new_reg=reg)); 
+     set regimen2_9;
+	 by ptid;
+	 if first.ptid eq 1 and compress(upcase(new_reg)) eq "BLANK" then delete;
+run;
+
+proc sort data=regimen2_10
+     out=regimen2_11;
+     by ptid start reg;
+run;
+
+/*Step 4 completed*/
+
+
+/*Step 5 begins*/
+
+proc sort data=regimen2_11 out=regimen3_1;
+	by ptid start;
+quit;
+
+proc transpose data = regimen3_1 out = trans_strt prefix = strt;
+	by ptid;
+	var start;
+run;
+
+proc transpose data = regimen3_1 out = trans_end prefix = ends;
+	by ptid;
+	var end;
+run;
+
+proc transpose data = regimen3_1 out = trans_reg prefix = reg;
+	by ptid;
+	var reg;
+run;
+
+data regimen3_2 (drop = _name_);
+	merge trans_strt trans_end trans_reg;
+	by ptid;
+run;
+
+/*A variable max_reg2 created to identify maximum number of regimens present, to be used in defining dimension of array*/
+proc sql;
+select max(cnt) into : max_reg2 
+from 
+(select count(ptid)as cnt
+from
+regimen3_1
+group by ptid);
+quit;
+
+%let blank_dur=60; 
+
+data regimen3_3;
+	set regimen3_2;
+	array strt(&max_reg2.);
+	array ends(&max_reg2.);
+	array reg(&max_reg2.);
+	z= N(of strt:);
+			
+
+	do i = 2  to z ;
+		y = 0;
+		if compress(Upcase(reg(i))) = 'BLANK' and compress(Upcase(reg(i-1))) ne 'BLANK' 
+		and compress(Upcase(reg(i+1))) ne 'BLANK' and strt(i) ne . then
+			do;
+				if ends(i) - strt(i)+1 lt &blank_dur. then
+					do;
+						if  compress(upcase(reg(i-1))) eq compress (upcase(reg(i+1))) then
+						do;
+							ends(i-1) = ends(i+1);
+							y = 100;
+							do k = i  to z - 2 ;
+									strt(k) = strt(k+2);
+									ends(k) = ends(k+2);
+									reg(k ) = reg(k+2);
+							end;
+								do k =  z-1 to Z;
+									strt(k ) = .;
+									ends(k ) = .;
+									reg(k ) = '';
+								end;	
+						end;
+					end;
+			end;
+			if y = 100 then i = i -1;
+	end;
+run;
+
+
+/*Bring back various start dates, end dates and regimens into respective columns*/
+data regimen3_4 (drop = strt: ends: reg: i z y k rename=(new_regimen=regimen));
+	set regimen3_3;
+	array strt(&max_reg2.);
+	array ends(&max_reg2.);
+	array reg(&max_reg2.);
+	format start end date9.;
+	do i = 1 to N( of strt:);
+		new_regimen = reg(i);
+		start = strt(i);
+		end = ends(i);
+		if new_regimen ='' then do;
+		end;
+		else output;
+	end;
+run;
+
+proc sort data=regimen3_4;
+by ptid start end regimen;
+run;
