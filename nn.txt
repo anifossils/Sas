@@ -1,0 +1,155 @@
+Libname anal "C:\Users\Ani\Downloads";
+
+
+
+Proc sql;
+create table tagging as select
+ENROLID,count(distinct drug_type)as cnt
+from anal.Mel_drug_data_p
+group by ENROLID;
+quit;
+
+Proc sql;
+create table regimen_1 as select a.*,
+b.cnt,
+case when cnt =1 and drug_type ="C" then "C"
+     when cnt =1 and drug_type ="NC" then "NC"
+	 else "C+NC"
+end as reg_type
+from anal.Mel_drug_data_p as a
+left join
+tagging as b
+on a.ENROLID=b.ENROLID;
+quit;
+
+
+Data regimen_2(keep= ENROLID SVCDATE cut_date DAYSUPP Generic route drug_type reg_type end_dt flag_21);
+set regimen_1;
+format cut_date end_dt date9.;
+retain cut_date;
+by ENROLID;
+if first.ENROLID then do;
+cut_date=SVCDATE+21-1;
+end;
+end_dt=SVCDATE+DAYSUPP-1;
+if SVCDATE <= cut_date then flag_21="Y";
+else flag_21 ="N";
+run;
+
+
+proc sort data=regimen_2 out=regimen_3 nodupkey;
+by enrolid SVCDATE Generic;
+run;
+
+
+Data flag_21_y falg_21_n;
+set regimen_3;
+if flag_21 = "Y" then output flag_21_y;
+else output falg_21_n;
+run;
+
+
+data regimen_4;
+set flag_21_y;
+format new_end date9.;
+by enrolid;
+if reg_type = "C"  then do ;
+if last.enrolid then new_end = end_dt;
+end;
+else if reg_type = "NC"  then do ;
+if last.enrolid then new_end = end_dt;
+end;
+else if reg_type = "C+NC" then do ;
+if last.enrolid and drug_type ="C" then new_end = end_dt;
+else if last.enrolid and drug_type ="NC" then new_end = end_dt;
+end;
+run;
+
+data regimen_5;
+set regimen_4;
+if reg_type = "C+NC"  and drug_type ="NC" then do;
+if last.ptid then new_end=end_dt;
+end;
+run;
+
+data mel_drug_data_1 (drop=drug drug_name);
+set anal.mel_drug_data_P;
+end=SVCDATE+daysupp-1;
+format end date9.;
+run;
+
+
+proc sort data=mel_drug_data_1 out=mel_drug_data_2 nodupkey;
+by enrolid SVCDATE generic;
+run;
+
+
+proc transpose data = mel_drug_data_2 out = trans_strt prefix = strt;
+	by enrolid;
+	var SVCDATE;
+run;
+
+
+proc transpose data = mel_drug_data_2   out = trans_end prefix = end;
+	by enrolid;
+	var end;
+run;
+
+proc transpose data =mel_drug_data_2    out = trans_generic prefix = generic;
+	by enrolid;
+	var generic;
+run;
+
+proc transpose data =mel_drug_data_2    out = trans_drug_type prefix = drug_type;
+	by enrolid;
+	var drug_type;
+run;
+
+
+data mel_drug_data_3 (drop = _name_ _LABEL_);
+	merge trans_strt trans_end trans_generic trans_drug_type;
+	by enrolid;
+run;
+
+
+%let max_drug=66;
+
+data regim.regimen2_6;
+	set regim.regimen2_5;
+	array strt(&max_drug);
+	array end(&max_drug);
+	array generic(&max_drug) $ ;
+	array drug_type(&max_drug) $;
+z= N(of strt:);
+j=1;
+/*start of first LOT*/
+start_LOT(j)=strt(1);
+cut_LOT(j)=start_LOT(j)+21-1;
+
+	do i=1 to z;
+run;
+
+
+
+
+/*%macro regimen_step1 (&i);*/
+data regimen_step1;
+set mel_drug_data_2;
+by enrolid SVCDATE generic;
+format start_LOT Cut_LOT date9.;
+array drug_LOT[5] $100 ;
+array type_Drug_LOT[5] $3;
+if first.enrolid then do;
+j=1;
+start_LOT=SVCDATE;
+Cut_LOT=start_LOT+21-1;
+drug_LOT(j)=generic;
+type_Drug_LOT(j)=drug_type;
+end;
+if not first.ptid then do;
+if SVCDATE<=Cut_LOT then do;
+drug_LOT(j+1)=generic;
+type_Drug_LOT(j+1)=drug_type;
+end;
+end;
+run;
