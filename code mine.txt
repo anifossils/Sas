@@ -1,0 +1,130 @@
+
+data regimen_1 ;
+set anal.mel_drug_data_P;
+format end_dt date9.;
+end_dt=SVCDATE+daysupp-1;
+where  drug_type ne 'UNK' ;
+rename svcdate = strt_dt;
+run;
+
+
+proc sort data=regimen_1 out=regimen_2 nodupkey ;
+by enrolid strt_dt generic;
+run;
+
+
+proc transpose data =regimen_2    out = regimen_3(drop = _name_ _LABEL_) prefix = drug;
+	by enrolid;
+	var generic;
+run;
+
+proc transpose data =regimen_2    out = regimen_4(drop = _name_ _LABEL_) prefix = drug_type;
+	by enrolid;
+	var drug_type;
+run;
+
+
+proc transpose data = regimen_2 out = regimen_5(drop = _name_ _LABEL_) prefix = start;
+	by enrolid;
+	var strt_dt;
+run;
+
+
+proc transpose data = regimen_2   out = regimen_6(drop = _name_ _LABEL_) prefix = ends;
+	by enrolid;
+	var end_dt;
+run;
+
+
+data trans_drug_data ;
+	merge regimen_3 regimen_4 regimen_5 regimen_6;
+	by enrolid;
+run;
+
+
+Data regimen_7;
+retain start_dt end_dt regimen  cut_dt reg_type  d k m z a; 
+	format   start_dt end_dt cut_dt date9.;
+	format reg_type $15.;
+	format regimen $300.;
+set trans_drug_data;
+	array start(66) start1-start66;
+	array ends(66) ends1-ends66;
+	array drug(66) $ drug1-drug66;
+	array drug_type(66) $ drug_type1-drug_type66;
+    z= N(of start:);
+	k=0;
+a=1;
+	do i=1 to z;
+if a=1 then do;
+			start_dt=start(i);
+			end_dt=ends(i);
+			regimen=Drug(i);
+			reg_type=drug_type(i);
+			cut_dt=start(i)+21-1;
+			a=0;
+			m=i;  
+			d=1;
+			if z=1 then output;
+		end;
+end;
+run;
+
+/*k denotes LOT count*/
+
+k=0;
+l=1;
+	do i=1 to z;
+
+		if l=1 then do;
+			start_LOT=strt(i);
+			regimen_LOT=strip(generic(i));
+			type_LOT=drug_type(i);
+			end_LOT=end(i);
+			cut_LOT=strt(i)+21-1;
+			l=0;
+			m=i;  
+			d=1;
+			if z=1 then output;
+		end;
+
+
+
+
+
+		else if l ne 1 then do;
+			if start(i)<=cut_dt then do;
+					regimen=catx(",",trim(left(regimen)),trim(left(strip(drug(i))));
+					reg_type=catx(",",trim(left(reg_type)),trim(left(strip(drug_type(i))));;
+					d=1;
+					if i=z then do;
+					if index(reg_type,'C')>0 and index(reg_type,'N')=0 then lot_type='C';
+					else if index(reg_type,'C')>0 and index(reg_type,'N')>0 then lot_type='C+N';
+					else if index(reg_type,'C')=0 and index(reg_type,'N')>0 then lot_type='N';
+
+					if lot_type='C' then do;
+					do h=m to i;
+					end_dt=max(end_dt,end(h));
+					end;
+					end;
+
+					else if regimen_type='C+N' then do;
+					do h=m to i;
+					if drug_type(h)='C' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+					
+					else if regimen_type='NO' then do;
+					do h=m to i;
+					end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+					output;
+					d=0;
+					end;
+					
+			end;
+run;
+
+
+
