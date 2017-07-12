@@ -1,0 +1,479 @@
+
+Proc sort data=anal.Mel_drug_data_p out=Mel_drug_data_p ;
+by ENROLID SVCDATE;
+run;
+
+/*patient_id drug_name drug_type) ($) (start end)*/
+
+Data regimen_1(keep= ENROLID SVCDATE  end generic drug_type rename=(generic=drug_name SVCDATE=start));
+set Mel_drug_data_p;
+format  end date9.;
+end=SVCDATE+DAYSUPP-1;
+run;
+
+
+Proc sql;
+create table tagging as select
+ENROLID,count(distinct drug_type)as cnt
+from regimen_1 
+where drug_type ne "UNK"
+group by ENROLID;
+quit;
+
+Proc sql;
+create table regimen_2 as select a.*,
+b.cnt
+from regimen_1  as a
+left join
+tagging as b
+on a.ENROLID=b.ENROLID;
+quit;
+
+Data regimen_3;
+set regimen_2;
+format reg_type $5.;
+if  cnt =1 and drug_type ="C" then reg_type= "CO";
+else if  cnt =1 and drug_type ="NC" then reg_type="NCO";
+else reg_type="C+NC";
+where drug_type ne "UNK";
+run;
+
+
+Data reg_c_n;
+set regimen_3;
+where reg_type="C+NC";
+rename ENROLID=patient_id;
+run;
+
+Proc sort data=reg_c_n;
+by patient_id start;
+run;
+
+
+data reg_c_n_m (keep=patient_id drug start_date end_date lot);
+  set reg_c_n;
+  by patient_id;
+  retain start_date end_date drug days;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_c_n ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_c_n (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+    
+    if drug_type eq 'C' then drug=drug_name;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'C' then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'C' then do;
+      counter+1;
+      end_date=max(end,end_date);
+    end;
+  end;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'C')))
+  then do;
+    if next_start le end_date then end_date=next_start-1;
+    lot+1;
+    output;
+    counter=0;
+  end;
+run;
+
+
+Data reg_c;
+set regimen_3;
+where reg_type="CO";
+rename ENROLID=patient_id;
+run;
+
+
+data reg_c_m (keep=patient_id drug start_date end_date lot);
+  set reg_c;
+  by patient_id;
+  retain start_date end_date drug days;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_c ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_c (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+    
+    if drug_type eq 'C' then drug=drug_name;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'C' then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'C' then do;
+      counter+1;
+      end_date=max(end,end_date);
+    end;
+  end;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'C')))
+  then do;
+    if next_start le end_date then end_date=next_start-1;
+    lot+1;
+    output;
+    counter=0;
+  end;
+run;
+
+
+Data reg_c;
+set regimen_3;
+where reg_type="CO";
+rename ENROLID=patient_id;
+run;
+
+
+data reg_c_m (keep=patient_id drug start_date end_date lot);
+  set reg_c;
+  by patient_id;
+  retain start_date end_date drug days;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_c ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_c (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+    
+    if drug_type eq 'C' then drug=drug_name;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'C' then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'C' then do;
+      counter+1;
+      end_date=max(end,end_date);
+    end;
+  end;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'C')))
+  then do;
+    if next_start le end_date then end_date=next_start-1;
+    lot+1;
+    output;
+    counter=0;
+  end;
+run;
+
+Data reg_c;
+set regimen_3;
+where reg_type="CO";
+rename ENROLID=patient_id;
+run;
+
+
+data reg_c_m (keep=patient_id drug start_date end_date lot);
+  set reg_c;
+  by patient_id;
+  retain start_date end_date drug days;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_c ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_c (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+    
+    if drug_type eq 'C' then drug=drug_name;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'C' then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'C' then do;
+      counter+1;
+      end_date=max(end,end_date);
+    end;
+  end;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'C')))
+  then do;
+    if next_start le end_date then end_date=next_start-1;
+    output;
+    counter=0;
+  end;
+run;
+
+
+Data reg_c;
+set regimen_3;
+where reg_type="CO";
+rename ENROLID=patient_id;
+run;
+
+
+data reg_c_m (keep=patient_id drug start_date end_date lot);
+  set reg_c;
+  by patient_id;
+  retain start_date end_date drug days;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_c ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_c (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+    
+    if drug_type eq 'C' then drug=drug_name;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'C' then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'C' then do;
+      counter+1;
+      end_date=max(end,end_date);
+    end;
+  end;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'C')))
+  then do;
+    if next_start le end_date then end_date=next_start-1;
+    output;
+    counter=0;
+  end;
+run;
+
+Data reg_nc;
+set regimen_3;
+where reg_type="NCO";
+rename ENROLID=patient_id;
+run;
+
+
+data reg_nc_m (keep=patient_id drug start_date end_date lot);
+  set reg_nc;
+  by patient_id;
+  retain start_date end_date drug days;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_nc ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_nc (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+    
+    if drug_type eq 'NC' then drug=drug_name;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'NC' then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then drug=catx('+',drug,drug_name);
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'NC' then do;
+      counter+1;
+      end_date=max(end,end_date);
+    end;
+  end;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'NC')))
+  then do;
+    if next_start le end_date then end_date=next_start-1;
+    output;
+    counter=0;
+  end;
+run;
+
+
+
