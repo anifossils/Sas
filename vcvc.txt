@@ -1,0 +1,339 @@
+
+Proc sql;
+create table tagging as select
+ENROLID,count(distinct drug_type)as cnt
+from anal.Mel_drug_data_p
+where drug_type ne "UNK"
+group by ENROLID;
+quit;
+
+Proc sql;
+create table regimen_1 as select a.*,
+b.cnt
+from anal.Mel_drug_data_p as a
+left join
+tagging as b
+on a.ENROLID=b.ENROLID;
+quit;
+
+Data regimen_2(keep= ENROLID SVCDATE cnt  end generic drug_type rename=(generic=drug_name SVCDATE=start));
+set regimen_1;
+format  end date9.;
+end=SVCDATE+DAYSUPP-1;
+run;
+
+
+Data regimen_3(keep=ENROLID  drug_name drug_type1 cnt start end rename=(drug_type1=drug_type)) ;
+set regimen_2;
+format reg_type $5.drug_type1 $10. drug_type $10. ;
+if  drug_type ="C" then drug_type1= "Core";
+else if  drug_type ="NC" then drug_type1="Non_core";
+else drug_type1=drug_type;
+where drug_type ne "UNK";
+run;
+
+
+Data regimen_4;
+set regimen_3;
+rename ENROLID=patient_id;
+if cnt=1 and drug_type= "Non_core" then type="Y";
+else type="N";
+run;
+
+Data reg_c_n reg_n;
+set regimen_4;
+if  type="Y" then output reg_n;
+else output reg_c_n;
+run;
+
+Proc sort data=reg_c_n(keep=patient_id start end drug_type drug_name);
+by patient_id start;
+run;
+
+
+Proc sort data=reg_n(keep=patient_id start end drug_type drug_name);
+by patient_id start;
+run;
+
+Data cc;
+set reg_c_n;
+where patient_id in (1907600801,2497901901,2795571701,2951727002);
+run;
+
+
+
+data ff;
+set xx;
+where  enrolid in (2497901901,2795571701,2951727002);
+run;
+
+
+
+data bb;
+set reg_all;
+where  patient_id in (2497901901,2795571701,2951727002);
+run;
+
+2795571701
+data reg_c_n_m
+ (keep=patient_id drug start_date end_date lot)
+ ;
+  set reg_c_n;
+  by patient_id;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_c_n ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_c_n (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+ 
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  array adrugs(100) $
+  adrug1-adrug100
+/*   _temporary_ */
+ ;
+  array adates(100)
+  adate1-adate100;
+/*   _temporary_ */
+ ;
+  *format adate1-adate20 date9.;
+  retain start_date end_date drug days adrug: adate:;
+    
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    if first.patient_id then do;
+      call missing (of adrugs(*));
+      call missing (of adates(*));
+      dcounter=0;
+    end;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+          
+    if drug_type eq 'Core' then do;
+      drug=drug_name;
+      dcounter+1;
+      adrugs(dcounter)=drug_name;
+      adates(dcounter)=end;
+      do i=1 to dim(adrugs);
+        if (not missing(adrugs(i))) and adates(i) ge start_date and adrugs(i) ne strip(drug_name) then do;
+          drug=catx('+',drug,adrugs(i));
+          end_date=max(end_date,adates(i));
+        end;
+        else do;
+          call missing(adrugs(i));
+          call missing(adates(i));
+        end;
+      end;
+    end;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'Core' then do;
+      if not findw(drug,strip(drug_name)) then do;
+        drug=catx('+',drug,drug_name);
+        dcounter+1;
+        adrugs(dcounter)=drug_name;
+        adates(dcounter)=end;
+      end;
+      do i=1 to dim(adrugs);
+        if drug_name eq adrugs(i) and adates(i) lt start_date then do;
+          adates(i)=end;
+        end;
+      end;
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then do;
+        drug=catx('+',drug,drug_name);
+        if drug_type='Core' then do;
+          dcounter+1;
+          adrugs(dcounter)=drug_name;
+          adates(dcounter)=end;
+        end;
+      end;
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'Core' then do;
+      counter+1;
+      end_date=max(end,end_date);
+      do i=1 to dim(adrugs);
+        if adrugs(i) eq strip(drug_name) then do;
+          adates(i)=max(adates(i),end);
+        end;
+      end;
+    end;
+  end;
+*output;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date+60 or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'Core')))
+  then do;
+    if not missing(next_start) and next_start le end_date then end_date=next_start-1;
+    lot+1;
+    output;
+    counter=0;
+  end;
+run;
+
+Data reg_c_n_m(keep=patient_id drug start_date end_date lot1 drop=lot rename=(lot1=lot));
+set reg_c_n_m;
+by patient_id;
+if first.patient_id then lot1=0;
+lot1+1;
+run;
+
+Data reg_n;
+set reg_n;
+if drug_type="Non_core" then drug_type="Core";
+run;
+
+data reg_n_m
+ (keep=patient_id drug start_date end_date lot)
+ ;
+  set reg_n;
+  by patient_id;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set reg_n ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      reg_n (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+ 
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $200.;
+  array adrugs(100) $
+  adrug1-adrug100
+/*   _temporary_ */
+ ;
+  array adates(100)
+  adate1-adate100;
+/*   _temporary_ */
+ ;
+  *format adate1-adate20 date9.;
+  retain start_date end_date drug days adrug: adate:;
+    
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    if first.patient_id then do;
+      call missing (of adrugs(*));
+      call missing (of adates(*));
+      dcounter=0;
+    end;
+    start_date=start;
+    end_date=end;
+    days=21;
+    counter=1;
+    drug='';
+          
+    if drug_type eq 'Core' then do;
+      drug=drug_name;
+      dcounter+1;
+      adrugs(dcounter)=drug_name;
+      adates(dcounter)=end;
+      do i=1 to dim(adrugs);
+        if (not missing(adrugs(i))) and adates(i) ge start_date and adrugs(i) ne strip(drug_name) then do;
+          drug=catx('+',drug,adrugs(i));
+          end_date=max(end_date,adates(i));
+        end;
+        else do;
+          call missing(adrugs(i));
+          call missing(adates(i));
+        end;
+      end;
+    end;
+  end;
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 and start le Start_Date+21 then do;
+    if drug_type eq 'Core' then do;
+      if not findw(drug,strip(drug_name)) then do;
+        drug=catx('+',drug,drug_name);
+        dcounter+1;
+        adrugs(dcounter)=drug_name;
+        adates(dcounter)=end;
+      end;
+      do i=1 to dim(adrugs);
+        if drug_name eq adrugs(i) and adates(i) lt start_date then do;
+          adates(i)=end;
+        end;
+      end;
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    /* ignore record if Non_core and no core yet in lot */
+    else if not missing(drug) then do;
+      if not findw(drug,strip(drug_name)) then do;
+        drug=catx('+',drug,drug_name);
+        if drug_type='Core' then do;
+          dcounter+1;
+          adrugs(dcounter)=drug_name;
+          adates(dcounter)=end;
+        end;
+      end;
+      counter+1;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) and drug_type eq 'Core' then do;
+      counter+1;
+      end_date=max(end,end_date);
+      do i=1 to dim(adrugs);
+        if adrugs(i) eq strip(drug_name) then do;
+          adates(i)=max(adates(i),end);
+        end;
+      end;
+    end;
+  end;
+*output;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date+60 or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'Core')))
+  then do;
+    if not missing(next_start) and next_start le end_date then end_date=next_start-1;
+    lot+1;
+    output;
+    counter=0;
+  end;
+run;
+
+Data reg_n_m(keep=patient_id drug start_date end_date lot1 drop=lot rename=(lot1=lot));
+set reg_n_m;
+by patient_id;
+if first.patient_id then lot1=0;
+lot1+1;
+run;
+
+Data reg_all;
+set reg_c_n_m reg_n_m;
+by patient_id;
+run;
+
