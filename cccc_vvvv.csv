@@ -1,0 +1,649 @@
+start_LOT,end_LOT,regimen_LOT,regimen_type,ENROLID
+01-Aug-13,12-Oct-13,Dabrafenib,CO,15756601
+24-Oct-13,16-Jan-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,15756601
+31-Oct-13,28-Dec-13,Dabrafenib,CO,27962001
+28-Mar-14,25-Jun-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,27962001
+12-Nov-14,15-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,30545801
+05-Jun-14,04-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,104731301
+25-Jun-15,28-Sep-15,Interferon Alfa-2b,NO,152569902
+04-Aug-15,27-Dec-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,155947101
+04-Mar-14,27-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,174569701
+02-Jun-14,02-Oct-14,Dasatinib,NO,183202901
+06-Oct-15,09-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,207427201
+18-May-16,16-Jun-16,Dabrafenib+Trametinib,CO,207427201
+10-Oct-14,11-Nov-14,Paclitaxel,NO,209279301
+12-Nov-14,05-Apr-15,Pembrolizumab,CO,209279301
+04-Apr-16,08-May-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,212609602
+09-May-16,05-Jun-16,Cobimetinib+Vemurafenib,CO,212609602
+28-Jul-14,25-Oct-14,Vemurafenib,CO,247601001
+17-Oct-14,15-Nov-14,Temozolomide,CO,257763001
+10-Jul-15,09-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,262730101
+29-Jan-14,07-Aug-14,Vemurafenib,CO,319503301
+24-Sep-14,23-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,319503301
+19-May-14,12-Aug-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,324036201
+01-Apr-14,02-Oct-14,Vemurafenib,CO,368640402
+29-Oct-14,31-Jan-15,Dabrafenib,CO,369602301
+15-Jul-15,06-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,370505701
+29-Jan-15,27-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,379653101
+04-Aug-15,19-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,379653101
+25-Jul-13,10-Sep-13,Vemurafenib,CO,382388802
+11-Sep-13,05-Nov-13,Temozolomide,CO,382388802
+27-Apr-16,20-Jun-16,Fluorouracil,NO,384357302
+16-Sep-14,09-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,552393802
+20-May-14,02-Sep-14,Temozolomide,CO,556897802
+03-Jun-15,19-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,567728601
+15-Aug-13,07-Jan-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,591601401
+18-Mar-14,14-Apr-14,Dabrafenib+Temozolomide+Trametinib Dimethyl Sulfoxide,CO,591601401
+15-Apr-14,14-May-14,Vemurafenib,CO,591601401
+16-May-14,08-Aug-14,Temozolomide+Vemurafenib,CO,591601401
+08-Oct-13,18-Dec-13,Vemurafenib,CO,593520901
+07-Oct-14,20-Nov-14,Fluorouracil,NO,598912601
+20-Jun-14,19-Dec-14,Temozolomide,CO,602335701
+23-Dec-14,21-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,602904801
+11-Jun-13,10-Jul-13,Vemurafenib,CO,610657601
+08-Apr-15,27-Apr-15,Fluorouracil,NO,611034402
+26-Apr-16,25-May-16,Fluorouracil,NO,611034402
+16-Mar-16,14-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,611628301
+31-Mar-14,27-Jan-15,Dabrafenib,CO,613480301
+20-Apr-15,22-Jul-16,Dabrafenib,CO,613480301
+05-Feb-16,02-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,619331301
+11-May-16,02-Jul-16,Dabrafenib+Trametinib,CO,626251101
+08-Oct-13,06-Nov-13,Dabrafenib,CO,627819101
+14-Jul-14,14-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,633266701
+30-Mar-15,12-Apr-15,Fluorouracil,NO,633416102
+12-Aug-14,19-Jan-16,Vemurafenib,CO,636312302
+20-Jan-16,13-Jul-16,Cobimetinib+Vemurafenib,CO,636312302
+09-Aug-13,03-Jan-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,675152101
+16-Aug-13,22-Jan-14,Vemurafenib,CO,690585101
+30-Apr-13,22-Jun-13,Vemurafenib,CO,693275601
+27-Jun-13,12-Oct-13,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,693275601
+25-Oct-13,23-Nov-13,Vemurafenib,CO,693275601
+13-Dec-13,11-Jan-14,Vemurafenib,CO,693443001
+08-May-13,06-Jun-13,Fluorouracil,NO,693759401
+08-Jun-15,30-May-16,Interferon Alfa-2b,NO,703227302
+25-Apr-14,28-Jun-14,Vemurafenib,CO,703884003
+02-Jul-14,23-Sep-14,Dabrafenib,CO,703884003
+24-Sep-14,03-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,703884003
+10-Dec-15,14-Dec-15,Temozolomide,CO,703884003
+31-Mar-14,08-Aug-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,707173302
+12-Jun-14,30-Dec-14,Vemurafenib,CO,714956601
+11-Sep-13,03-Jan-14,Vemurafenib,CO,736317001
+05-Apr-13,02-May-13,Peginterferon Alfa-2b,NO,739856701
+09-May-13,30-Jul-13,Vemurafenib,CO,739856701
+23-Dec-13,18-Feb-14,Vemurafenib,CO,741807901
+21-Jun-13,02-Mar-14,Peginterferon Alfa-2b,NO,745631801
+03-Sep-14,26-Mar-15,Interferon Alfa-2b,NO,751599201
+17-Jun-15,14-Jul-15,Interferon Alfa-2b,NO,751599201
+28-Aug-14,16-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,752174101
+03-Sep-15,29-Oct-15,Vemurafenib,CO,759573301
+17-Jun-14,14-Jul-14,Vemurafenib,CO,763655401
+06-Nov-14,29-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,774893902
+28-May-15,24-Jun-15,Vemurafenib,CO,774893902
+09-Sep-13,28-Oct-13,Temozolomide,CO,851731901
+13-Nov-15,27-Nov-15,Fluorouracil,NO,856262701
+16-Sep-14,11-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,863991503
+30-Jul-13,30-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,865544402
+28-Jan-16,30-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,873428501
+23-Aug-15,06-Sep-15,Fluorouracil,NO,874301501
+06-Jan-16,20-Jan-16,Fluorouracil,NO,874301501
+19-Jun-14,14-Feb-15,Dabrafenib,CO,875021301
+09-May-14,07-Jun-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,877263001
+25-Mar-14,23-Apr-14,Vemurafenib,CO,895702301
+02-Dec-14,02-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,898603701
+16-May-13,12-Jun-13,Fluorouracil,NO,900722501
+15-Jan-16,11-May-16,Dabrafenib,CO,902987902
+28-May-15,22-Jul-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,904971601
+12-Oct-15,25-Feb-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,927751201
+11-Jun-14,18-Mar-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,946137701
+23-May-13,21-Jun-13,Vemurafenib,CO,948609601
+21-May-15,19-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,959521102
+15-Jan-14,16-Dec-14,Pazopanib Hydrochloride,NO,978145401
+21-Jun-16,20-Jul-16,Dabrafenib+Trametinib,CO,985652901
+21-Aug-15,09-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,988971802
+16-Dec-14,24-Dec-15,Peginterferon Alfa-2b,NO,989555902
+09-Jul-15,24-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,996121301
+15-Sep-14,20-Jan-15,Vemurafenib,CO,998068701
+25-Aug-15,05-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,999682801
+29-Oct-14,30-Dec-14,Interferon Alfa-2b,NO,1005526101
+11-Jul-13,09-Oct-13,Vemurafenib,CO,1011473501
+26-Mar-14,23-Jun-14,Interferon Alfa-2b,NO,1011685901
+20-Dec-13,19-Jun-14,Temozolomide,CO,1013208601
+11-Mar-15,22-Dec-15,Peginterferon Alfa-2b,NO,1060258602
+14-Jan-14,27-Apr-14,Capecitabine,NO,1062748902
+07-Oct-15,01-Feb-16,Palbociclib,NO,1062748902
+09-Jun-16,28-Jun-16,Pazopanib Hydrochloride,NO,1063532001
+31-May-13,22-Aug-13,Ipilimumab,CO,1063703601
+03-Dec-13,20-Feb-14,Dabrafenib,CO,1063792601
+29-Feb-16,29-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1064297601
+09-Nov-14,08-Dec-14,Fluorouracil,NO,1068171002
+27-Dec-13,25-Jan-14,Vemurafenib,CO,1085521101
+13-Apr-15,19-Sep-16,Vemurafenib,CO,1085521101
+09-Oct-14,07-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1089191001
+28-Aug-14,04-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1092706602
+04-Dec-13,17-May-14,Temozolomide,CO,1093427202
+21-Jun-13,04-Oct-13,Vemurafenib,CO,1103659801
+28-Oct-13,26-Nov-13,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1103659801
+04-Dec-13,29-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1105100002
+24-Apr-15,28-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1106140401
+18-Feb-15,19-Mar-15,Imatinib Mesylate,CO,1119854401
+08-Oct-15,28-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1123017302
+10-Dec-14,30-Dec-14,Pembrolizumab,CO,1129048503
+19-May-14,17-Jun-14,Fluorouracil,NO,1143898001
+06-Jan-16,09-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1146020301
+11-Apr-16,29-May-16,Cobimetinib+Vemurafenib,CO,1146020301
+27-May-16,25-Jul-16,Cobimetinib+Vemurafenib,CO,1156469601
+01-Aug-13,27-Jun-14,Vemurafenib,CO,1164427801
+12-Dec-14,08-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1172233601
+15-Apr-13,23-Oct-13,Vemurafenib,CO,1178757901
+11-Aug-15,09-Sep-15,Vemurafenib,CO,1192614103
+20-Oct-15,15-Dec-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1192614103
+10-Aug-14,29-Oct-14,Interferon Alfa-2b,NO,1228462001
+02-May-14,07-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1236854101
+06-Jul-15,21-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1236854101
+26-Jan-16,24-Feb-16,Betaxolol Hydrochloride,CO,1254810301
+28-Apr-16,27-May-16,Betaxolol Hydrochloride,CO,1254810301
+28-Apr-15,11-May-15,Fluorouracil,NO,1261158401
+24-May-16,28-May-16,Temozolomide,CO,1261697002
+23-May-16,21-Jul-16,Dabrafenib+Trametinib,CO,1262752201
+07-Dec-15,21-Dec-15,Fluorouracil,NO,1268508901
+07-Jan-14,04-Dec-14,Interferon Alfa-2b,NO,1268571901
+14-Jul-15,27-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1268571901
+13-May-13,27-Jan-14,Temozolomide,CO,1270636801
+27-Mar-14,29-May-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1270636801
+27-Jan-16,01-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1270851801
+21-Sep-15,17-Nov-15,Trametinib Dimethyl Sulfoxide,CO,1278593301
+09-May-13,11-Aug-13,Vemurafenib,CO,1279454101
+19-Aug-13,01-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1279454101
+02-Sep-15,21-Nov-15,Trametinib Dimethyl Sulfoxide+Vemurafenib,CO,1279454101
+04-Dec-15,09-Feb-16,Cobimetinib,CO,1279454101
+30-Mar-15,10-Apr-15,Interferon Alfa-2b,NO,1279504601
+14-May-15,10-Jun-15,Temozolomide,CO,1280126601
+12-Aug-14,08-Sep-14,Interferon Alfa-2b,NO,1289519901
+14-Aug-15,12-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1291674301
+13-May-14,22-Jun-14,Ipilimumab,CO,1295960101
+10-Jun-14,07-Jul-14,Fluorouracil,NO,1310850101
+08-Dec-14,06-Jan-15,Fluorouracil,NO,1310850101
+04-Nov-13,01-Feb-14,Dabrafenib,CO,1313000301
+08-Jan-15,16-Feb-15,Vemurafenib,CO,1313255002
+09-Jun-16,06-Jul-16,Peginterferon Alfa-2b,NO,1321919702
+29-Jan-15,27-Feb-15,Vemurafenib,CO,1330335101
+12-May-15,10-Jun-15,Vemurafenib,CO,1330335101
+27-Jul-15,17-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1335235501
+15-Jun-16,14-Jul-16,Dabrafenib+Trametinib,CO,1335235501
+08-Feb-14,20-Jul-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1338111002
+30-Sep-13,23-Nov-13,Vemurafenib,CO,1338767001
+03-Feb-15,04-Mar-15,Dabrafenib,CO,1339492702
+28-Jan-14,04-May-14,Paclitaxel,NO,1340252702
+05-May-14,25-May-14,Ipilimumab,CO,1340252702
+08-Oct-14,28-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1344473201
+03-Apr-14,15-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1349032901
+25-Apr-14,19-Dec-14,Temozolomide,CO,1351094201
+23-May-14,12-Jun-14,Temozolomide,CO,1358704201
+10-Jun-16,09-Jul-16,Dabrafenib,CO,1361071802
+02-Mar-16,31-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1366750502
+23-Dec-15,13-Jan-16,Cobimetinib+Trametinib Dimethyl Sulfoxide+Vemurafenib,CO,1369439501
+14-Jan-16,09-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1369439501
+16-Mar-15,02-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1378914102
+21-May-15,23-May-16,Imatinib Mesylate,CO,1383443201
+25-Oct-13,23-Dec-13,Temozolomide,CO,1398678402
+16-Jul-13,17-Sep-13,Temozolomide,CO,1398832201
+16-Mar-15,11-Aug-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1398956901
+26-Dec-14,10-Apr-15,Vemurafenib,CO,1401121001
+15-Nov-13,27-Mar-14,Vemurafenib,CO,1402607301
+23-Jul-15,06-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1403614101
+06-Jun-13,28-Aug-13,Vemurafenib,CO,1426867501
+29-Aug-13,14-Oct-13,Temozolomide,CO,1426867501
+12-Aug-14,29-May-15,Dabrafenib,CO,1436397401
+03-Mar-15,01-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1444522801
+05-Feb-15,23-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1445726601
+30-Jun-15,12-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1446033201
+22-Jul-15,19-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1453318101
+16-Sep-15,25-Feb-16,Interferon Alfa-2b,NO,1455621601
+16-Dec-15,02-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1459055501
+17-Sep-13,09-Nov-13,Temozolomide,CO,1470211801
+18-Jan-14,16-Feb-14,Fluorouracil,NO,1471179202
+09-Feb-15,06-Mar-15,Fluorouracil,NO,1471179202
+06-May-15,04-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1481742201
+10-Oct-14,29-Oct-14,Fluorouracil,NO,1497558801
+23-Jul-15,23-Sep-15,Dabrafenib,CO,1506271501
+27-Aug-13,03-Jan-14,Imatinib Mesylate,CO,1506346102
+25-Jun-14,04-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1521846601
+27-Sep-13,19-Dec-13,Peginterferon Alfa-2b,NO,1524760803
+13-May-14,21-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1525101002
+04-Dec-15,02-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1530384302
+10-May-16,06-Jun-16,Temozolomide,CO,1531355002
+18-Jun-14,17-Jul-14,Vemurafenib,CO,1531440901
+18-Sep-14,09-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1538576501
+28-Jan-15,01-Feb-15,Temozolomide,CO,1538576501
+03-Dec-14,01-Jan-15,Vemurafenib,CO,1540455001
+23-Apr-13,19-Nov-14,Vemurafenib,CO,1541456501
+03-Dec-14,09-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1541456501
+05-Feb-16,26-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1541978201
+11-Jul-14,09-Aug-14,Crizotinib,NO,1544050701
+07-Mar-16,27-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1549462801
+18-Mar-14,03-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1557196301
+26-Apr-16,25-May-16,Dabrafenib+Trametinib,CO,1557196301
+22-Apr-15,21-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1557214201
+18-May-15,19-Aug-15,Temozolomide,CO,1561649701
+16-Oct-13,30-Oct-13,Fluorouracil (Topical),NO,1562859201
+02-Jul-14,31-Jul-14,Fluorouracil (Topical),NO,1562859201
+20-Nov-15,19-Dec-15,Fluorouracil,NO,1562859201
+27-Dec-13,13-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1565423602
+12-Sep-13,01-Dec-13,Temozolomide,CO,1579340702
+21-Aug-15,22-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1583531702
+23-Mar-16,19-Apr-16,Vemurafenib,CO,1583531702
+09-Mar-15,04-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1588067202
+03-Nov-15,31-Jan-16,Trametinib Dimethyl Sulfoxide,CO,1609978101
+03-Jul-13,01-Aug-13,Vemurafenib,CO,1614093902
+25-Apr-14,15-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1615100002
+06-Apr-16,30-Apr-16,Fluorouracil,NO,1620757301
+25-Sep-14,24-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1628369301
+26-Jun-15,09-Jul-15,Fluorouracil,NO,1628565701
+01-Oct-15,10-Jul-16,Interferon Alfa-2b,NO,1658915401
+16-Jan-15,20-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1663508604
+25-Mar-14,13-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1664839602
+12-May-16,25-May-16,Fluorouracil,NO,1668954901
+22-Apr-15,15-Dec-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1702940901
+22-Jun-15,23-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1713996101
+18-Mar-16,16-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1725845101
+24-Feb-15,15-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1741696701
+24-Feb-15,12-Jun-15,Interferon Alfa-2b,NO,1776026201
+25-Feb-15,17-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1784454801
+06-Sep-13,05-Oct-13,Dabrafenib,CO,1786546701
+29-Oct-13,25-Jan-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1816854701
+07-Feb-14,14-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1820380102
+05-May-14,03-Jun-14,Vemurafenib,CO,1842167901
+11-Sep-14,04-Nov-14,Temozolomide,CO,1842167901
+30-Apr-15,06-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1842434902
+29-May-13,03-Jul-16,Vemurafenib,CO,1864362202
+23-Apr-14,28-Oct-14,Vemurafenib,CO,1874022101
+30-Oct-14,29-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1874022101
+24-Sep-15,13-May-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1880796702
+08-Jul-15,13-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1899456201
+18-Mar-16,16-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1899456201
+09-Apr-15,28-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1902410001
+22-Apr-16,10-Jul-16,Cobimetinib+Vemurafenib,CO,1902410001
+18-Dec-14,01-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1904298402
+06-Aug-14,02-Mar-15,Peginterferon Alfa-2b,NO,1907600801
+03-Mar-15,23-Mar-15,Ipilimumab,CO,1907600801
+24-Jun-16,21-Jul-16,Temozolomide,CO,1907600801
+10-Mar-14,30-Mar-14,Dabrafenib,CO,1913435401
+31-Mar-14,25-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1913435401
+05-Jul-13,06-Sep-13,Dabrafenib,CO,1917868502
+01-Oct-13,14-Jan-14,Trametinib Dimethyl Sulfoxide,CO,1917868502
+27-Jun-16,26-Jul-16,Dabrafenib+Trametinib,CO,1948382701
+03-Jun-13,28-Jan-14,Vemurafenib,CO,1948746901
+17-Sep-13,21-Sep-13,Temozolomide,CO,1954338502
+03-Dec-14,02-Mar-15,Fluorouracil,NO,1954415201
+18-Mar-14,20-Jul-14,Dabrafenib,CO,1955542701
+21-Jul-14,15-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1955542701
+31-Aug-15,28-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1957619302
+26-Feb-15,28-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1979862002
+10-Aug-13,16-Feb-14,Vemurafenib,CO,1984143802
+24-Feb-14,28-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,1984143802
+14-May-13,12-Jun-13,Vemurafenib,CO,2015819801
+27-Sep-13,28-Dec-13,Vemurafenib,CO,2015819801
+08-May-14,06-Jun-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2025906301
+15-Aug-14,14-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2025906301
+11-Oct-13,18-Nov-13,Ipilimumab,CO,2026806902
+27-Jan-15,08-Oct-15,Vemurafenib,CO,2029836901
+17-Sep-15,17-Sep-15,Fluorouracil,NO,2049586203
+17-Sep-15,19-Nov-15,Fluorouracil,NO,2073027901
+05-Sep-14,31-Oct-14,Vemurafenib,CO,2075033801
+24-Mar-15,15-Feb-16,Interferon Alfa-2b,NO,2080720901
+14-May-14,09-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2095332002
+23-Feb-16,07-Mar-16,Fluorouracil,NO,2100194301
+04-Aug-15,02-Sep-15,Vemurafenib,CO,2103582101
+28-Sep-15,08-Jul-16,Dabrafenib,CO,2103582101
+03-Aug-15,08-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2108440101
+25-Mar-14,23-Apr-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2118942801
+31-Dec-14,29-Jan-15,Trametinib Dimethyl Sulfoxide,CO,2138355901
+25-Mar-16,17-May-16,Temozolomide,CO,2154605701
+29-Jul-13,18-Aug-13,Fluorouracil,NO,2157012001
+05-Jan-16,17-Mar-16,Cobimetinib+Vemurafenib,CO,2174419902
+24-Mar-16,20-Apr-16,Temozolomide,CO,2174419902
+01-May-13,17-Jul-13,Ipilimumab+Temozolomide,CO,2174533402
+30-Jul-13,28-Aug-13,Vemurafenib,CO,2178927901
+31-Oct-14,16-Apr-15,Vemurafenib,CO,2189010001
+22-Sep-15,20-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2214232302
+13-Aug-14,11-Dec-14,Vemurafenib,CO,2217263802
+12-Apr-16,26-May-16,Capecitabine+Temozolomide,CN,2218508601
+09-Dec-15,07-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2218761501
+30-Apr-15,27-May-15,Nivolumab,CO,2221814801
+13-Jan-16,09-Feb-16,Nivolumab,CO,2221814801
+31-Jul-14,29-Aug-14,Imatinib Mesylate,CO,2227833901
+16-Feb-16,16-Mar-16,Cobimetinib+Vemurafenib,CO,2230478002
+19-Nov-15,16-Feb-16,Fluorouracil,NO,2231453902
+14-May-14,09-Jun-14,Vemurafenib,CO,2238179801
+10-Jun-14,17-Aug-14,Dabrafenib,CO,2238179801
+18-Aug-14,17-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2238179801
+26-Aug-15,03-Aug-16,Interferon Alfa-2b,NO,2245423401
+14-Jul-14,06-Aug-14,Ipilimumab,CO,2259846301
+07-Aug-14,19-Nov-14,Ipilimumab+Vemurafenib,CO,2259846301
+22-Dec-14,20-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2259846301
+12-Nov-13,14-May-14,Vemurafenib,CO,2268422201
+21-Apr-14,22-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2271378701
+26-Jan-16,21-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2278835502
+02-Mar-16,27-Jun-16,Cobimetinib+Vemurafenib,CO,2283730101
+14-May-14,11-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2288752602
+18-Sep-14,04-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2290257802
+08-Jan-16,26-Jul-16,Temozolomide,CO,2316413501
+16-May-13,10-Jul-13,Imatinib Mesylate,CO,2317899401
+06-Mar-15,04-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2319867201
+23-Jul-14,21-Aug-14,Vemurafenib,CO,2321124901
+08-Dec-14,04-Jan-15,Interferon Alfa-2b,NO,2414343002
+18-Oct-14,16-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2424767501
+21-Aug-15,08-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2426307001
+23-Feb-16,11-Apr-16,Fluorouracil,NO,2429742802
+05-Nov-13,05-Apr-14,Vemurafenib,CO,2433234802
+31-Jan-14,04-Feb-14,Temozolomide,CO,2459456401
+22-Apr-14,12-Oct-14,Temozolomide,CO,2464970101
+06-May-16,20-May-16,Fluorouracil,NO,2478686501
+22-May-13,09-Dec-14,Vemurafenib,CO,2480806901
+29-Oct-13,13-Dec-13,Temozolomide,CO,2488012101
+11-Oct-13,07-Nov-13,Dabrafenib,CO,2497901901
+08-Nov-13,01-Jan-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2497901901
+12-Sep-13,24-Mar-14,Interferon Alfa-2b,NO,2504775901
+04-Apr-13,08-Aug-13,Vemurafenib,CO,2507590701
+26-May-15,24-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2511305601
+01-Oct-13,21-Oct-13,Capecitabine,NO,2522689601
+10-Nov-14,07-Jan-15,Trametinib Dimethyl Sulfoxide+Vemurafenib,CO,2526148101
+05-Jul-13,26-Jan-14,Interferon Alfa-2b,NO,2530459802
+11-Apr-13,08-May-13,Interferon Alfa-2b,NO,2546791701
+09-Nov-15,26-Dec-15,Interferon Alfa-2b,NO,2551305401
+25-Jun-14,24-Jul-14,Imatinib Mesylate,CO,2563597602
+18-Feb-15,29-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2570512902
+28-Nov-14,29-Dec-14,Fluorouracil,NO,2575648402
+19-May-14,30-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2581153701
+06-Oct-15,27-Jan-16,Dabrafenib,CO,2581153701
+28-Jan-16,21-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2581153701
+07-Oct-14,19-Jul-16,Dabrafenib,CO,2582845801
+11-Feb-14,23-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2598987701
+23-Jan-14,06-Apr-14,Vemurafenib,CO,2600297101
+19-Dec-14,22-Jul-15,Vemurafenib,CO,2600297101
+22-Feb-16,27-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2600297101
+09-Sep-14,14-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2607819502
+24-Nov-14,20-Feb-15,Vemurafenib,CO,2607819502
+24-May-15,22-Jun-15,Vemurafenib,CO,2607819502
+28-Dec-13,14-Apr-15,Vemurafenib,CO,2610067502
+06-May-15,10-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2620698301
+30-Jul-14,23-Sep-14,Dabrafenib,CO,2624235001
+24-Nov-14,01-Jul-16,Dabrafenib,CO,2624235001
+11-Jan-15,24-Mar-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2628329601
+27-Jan-14,29-Dec-14,Vemurafenib,CO,2646790701
+08-Nov-13,07-Dec-13,Trametinib Dimethyl Sulfoxide,CO,2651540301
+02-Jun-16,01-Jul-16,Dabrafenib+Trametinib,CO,2658143201
+19-Aug-14,21-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2665408601
+16-Jun-14,06-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2671487001
+24-Nov-14,04-Jul-16,Peginterferon Alfa-2b,NO,2689450903
+22-Jul-15,18-Nov-15,Interferon Alfa-2b,NO,2693380001
+19-Feb-14,28-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2703277501
+18-Aug-14,16-Sep-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2720311001
+02-Oct-14,31-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2747154801
+09-Sep-13,26-Feb-14,Vemurafenib,CO,2759138002
+31-Mar-14,29-Apr-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2759138002
+03-Aug-15,28-Feb-16,Cyclophosphamide,NO,2793863601
+31-Oct-13,22-Jan-14,Interferon Alfa-2b,NO,2795571701
+16-Apr-14,15-May-14,Vemurafenib,CO,2795571701
+27-Aug-14,22-Sep-14,Dabrafenib,CO,2796817701
+23-Sep-14,20-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2796817701
+20-Nov-13,14-Jan-14,Vemurafenib,CO,2822455801
+27-May-14,22-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2825251201
+18-Mar-16,13-Apr-16,Cobimetinib+Vemurafenib,CO,2825510102
+14-Apr-16,24-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2825510102
+15-Jun-15,01-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2826342001
+27-Feb-15,24-Apr-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2829931201
+03-Nov-15,05-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2831311701
+23-Jan-15,17-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2831444001
+15-Aug-14,18-Aug-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2842374701
+30-Mar-16,24-Jul-16,Cobimetinib+Vemurafenib,CO,2842374701
+20-Dec-13,18-Jan-14,Vemurafenib,CO,2843093601
+08-Apr-14,01-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2843093601
+13-Mar-15,14-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2843236902
+19-Jun-13,18-Jul-13,Dabrafenib,CO,2844533201
+22-Sep-15,28-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2861802301
+07-Nov-13,27-Dec-13,Peginterferon Alfa-2b,NO,2863454301
+01-Jul-15,28-Jul-15,Peginterferon Alfa-2b,NO,2876235101
+04-Oct-13,31-May-14,Vemurafenib,CO,2877572501
+14-Jul-14,10-Aug-14,Interferon Alfa-2b,NO,2878474901
+24-Sep-14,10-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2885997902
+26-Jun-13,27-Jul-14,Vemurafenib,CO,2887226302
+31-Oct-13,02-Jan-14,Dabrafenib,CO,2889142701
+03-Sep-14,18-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2914687401
+15-Nov-13,14-Dec-13,Vemurafenib,CO,2918434501
+27-Jul-15,25-Aug-15,Dabrafenib,CO,2918530201
+03-Oct-13,20-Apr-14,Peginterferon Alfa-2b,NO,2950711902
+24-Mar-14,06-Aug-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2951727002
+07-Aug-14,05-Sep-14,Vemurafenib,CO,2951727002
+03-Oct-14,27-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2951727002
+31-Mar-15,07-Jul-15,Temozolomide,CO,2951727002
+20-Jul-15,15-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2951727002
+17-Jun-15,06-Aug-15,Peginterferon Alfa-2b,NO,2969672601
+03-Sep-15,29-Oct-15,Temozolomide,CO,2981683201
+05-Nov-15,06-May-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2983912601
+04-May-15,28-Jul-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,2991046002
+12-Aug-14,10-Sep-14,Vemurafenib,CO,3002492601
+08-Aug-14,12-Oct-15,Peginterferon Alfa-2b,NO,3005747101
+07-Jun-16,28-Jul-16,Dabrafenib+Trametinib,CO,3005747101
+06-Nov-14,05-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3012216201
+30-Dec-15,28-Jan-16,Fluorouracil,NO,3034725701
+08-Jul-15,01-Nov-15,Interferon Alfa-2b,NO,3057388301
+13-Feb-14,14-Mar-14,Imatinib Mesylate,CO,3075494802
+22-May-14,25-Jul-14,Vemurafenib,CO,3083760001
+04-Sep-14,27-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3083760001
+03-Jun-16,26-Jul-16,Dabrafenib+Trametinib,CO,3083760001
+25-Jul-14,19-Aug-14,Fluorouracil,NO,3085629101
+16-Oct-13,12-Nov-13,Temozolomide,CO,3086225001
+31-Jul-15,29-Aug-15,Dabrafenib,CO,3095600001
+17-Sep-15,26-Sep-15,Fluorouracil,NO,3131386402
+07-Jan-14,07-Apr-14,Vemurafenib,CO,3132842801
+10-Jun-15,07-Jul-15,Temozolomide,CO,3132842801
+19-Nov-14,12-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3134735902
+06-Apr-15,26-Jul-15,Interferon Alfa-2b,NO,3135385901
+08-Jul-14,12-Feb-15,Dabrafenib,CO,3135397401
+31-Oct-15,19-Nov-15,Fluorouracil,NO,3137500301
+16-Oct-13,01-Jan-14,Ipilimumab,CO,3137700302
+25-Jul-14,14-Sep-14,Ipilimumab,CO,3137700302
+15-Aug-14,12-Oct-14,Dabrafenib,CO,3141255902
+13-Oct-14,10-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3141255902
+19-Feb-14,28-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3141691301
+20-Aug-14,28-Mar-15,Vemurafenib,CO,3145146901
+22-Dec-14,07-Feb-15,Cyclophosphamide,NO,3153000102
+04-Feb-14,27-Apr-14,Ipilimumab,CO,3153636801
+15-Mar-16,12-Jun-16,Betaxolol Hydrochloride,CO,3158608601
+02-Nov-15,01-Dec-15,Trametinib Dimethyl Sulfoxide,CO,3159156201
+01-Mar-16,17-Jul-16,Temozolomide,CO,3161809601
+24-Apr-15,23-May-15,Fluorouracil,NO,3165617901
+02-Oct-14,31-Oct-14,Vemurafenib,CO,3166343402
+05-Feb-16,12-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3166343402
+02-Mar-15,16-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3167439101
+18-Sep-15,07-Dec-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3169872801
+08-Dec-15,22-Feb-16,Pembrolizumab,CO,3169872801
+31-Mar-15,29-Apr-15,Fluorouracil,NO,3173258401
+08-Jan-14,05-Mar-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3179020701
+06-Mar-14,15-Aug-14,Dabrafenib+Ipilimumab+Trametinib Dimethyl Sulfoxide,CO,3179020701
+25-Feb-14,10-Aug-14,Interferon Alfa-2b,NO,3182871601
+18-Mar-15,06-Apr-15,Fluorouracil,NO,3183068101
+18-May-16,22-May-16,Dabrafenib,CO,3183068101
+03-Nov-14,09-Aug-15,Vemurafenib,CO,3183344402
+10-Aug-15,07-Jun-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3183344402
+13-May-15,14-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3187509001
+20-Feb-15,21-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3204965701
+06-Aug-14,22-Dec-14,Interferon Alfa-2b,NO,3206071201
+05-Dec-14,26-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3210672001
+21-Aug-14,15-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3237486701
+10-Apr-15,04-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3241106201
+27-Mar-14,25-Apr-14,Trametinib Dimethyl Sulfoxide,CO,3245734601
+28-Apr-14,27-May-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3245734601
+11-Jun-14,10-Jul-14,Vemurafenib,CO,3245734601
+23-Sep-15,22-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3245734601
+20-Oct-15,03-Jul-16,Vemurafenib,CO,3254634101
+10-Nov-15,28-Dec-15,Trametinib Dimethyl Sulfoxide,CO,3256346302
+29-Dec-15,21-Feb-16,Temozolomide,CO,3256346302
+28-Nov-14,27-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3256492501
+08-Jun-16,07-Jul-16,Vemurafenib,CO,3256492501
+13-Jan-16,12-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3260886102
+02-Nov-15,03-Jan-16,Interferon Alfa-2b,NO,3272139502
+12-Nov-15,30-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3311641301
+23-Oct-14,06-Jan-15,Temozolomide,CO,3358248502
+06-Aug-14,13-Jul-16,Vemurafenib,CO,3366624701
+08-Oct-14,24-Nov-14,Aldesleukin,CO,3368060401
+24-Feb-15,19-Apr-15,Aldesleukin,CO,3368060401
+07-Apr-16,05-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3381755101
+07-Oct-14,05-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3389788701
+19-Sep-14,14-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3399686302
+11-Apr-16,09-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3409918602
+27-Jun-16,26-Jul-16,Dabrafenib,CO,3422698501
+29-Oct-15,20-Mar-16,Peginterferon Alfa-2b,NO,3473142101
+29-Jun-16,28-Jul-16,Dabrafenib+Trametinib,CO,3502727301
+05-Jan-16,22-Jul-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,3524141703
+02-Jun-16,01-Jul-16,Dabrafenib+Trametinib,CO,3569171402
+20-Nov-15,17-Dec-15,Cobimetinib,CO,3591469901
+16-Mar-15,08-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,25038002401
+01-Mar-16,23-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,25039717501
+02-Feb-15,03-Mar-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,25042610501
+29-Apr-15,18-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,25048814701
+15-Apr-15,05-May-15,Dabrafenib,CO,25059472701
+06-May-15,24-Jul-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,25059472701
+23-Dec-15,19-Jul-16,Peginterferon Alfa-2b,NO,25064203301
+17-Jun-16,16-Jul-16,Dabrafenib+Trametinib,CO,25097542802
+02-Nov-15,28-Jul-16,Interferon Alfa-2b,NO,25296571202
+09-Apr-15,13-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,25930815202
+30-Jul-14,08-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,26221789201
+20-Nov-15,27-Nov-15,Temozolomide,CO,26221789201
+26-Dec-14,05-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,26222458702
+19-Dec-14,27-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,26223097101
+13-Oct-15,26-Oct-15,Fluorouracil,NO,26934810601
+23-Feb-15,01-Jun-15,Temozolomide,CO,26945787302
+02-Oct-13,12-Jan-14,Peginterferon Alfa-2b,NO,26978502102
+26-Sep-14,22-May-15,Vemurafenib,CO,26991264701
+28-Jul-15,15-May-16,Vemurafenib,CO,26991264701
+10-Aug-15,02-Oct-15,Trametinib Dimethyl Sulfoxide,CO,26993571201
+06-Apr-15,05-May-15,Vemurafenib,CO,26993950701
+19-Dec-14,26-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,27006804501
+21-Mar-14,08-Jun-14,Vemurafenib,CO,27059848901
+09-Jun-14,26-Sep-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,27059848901
+02-Jan-14,03-Nov-14,Interferon Alfa-2b,NO,27099808701
+19-May-15,24-Oct-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,27340276301
+30-Jul-15,05-Dec-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,27568151701
+14-Jul-14,25-Feb-15,Interferon Alfa-2b,NO,27630612502
+20-Sep-14,03-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28109586502
+09-Sep-13,31-Oct-13,Vemurafenib,CO,28133168001
+12-Mar-14,07-Jan-15,Vemurafenib,CO,28133168001
+15-Jan-14,05-Mar-15,Peginterferon Alfa-2b,NO,28137868702
+31-Jul-14,19-Oct-14,Capecitabine,NO,28177643101
+25-Apr-13,20-Aug-13,Vemurafenib,CO,28223417901
+25-Apr-14,14-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28257431101
+07-Mar-14,10-Oct-14,Interferon Alfa-2b,NO,28283655301
+16-Nov-14,15-Dec-14,Fluorouracil,NO,28294227501
+31-Oct-13,07-Jan-15,Imatinib Mesylate,CO,28298939901
+27-Mar-14,14-Sep-14,Interferon Alfa-2b,NO,28306828601
+04-Jan-14,29-Dec-14,Interferon Alfa-2b,NO,28307709801
+04-Sep-13,22-Nov-13,Vemurafenib,CO,28329874702
+15-Aug-13,20-Mar-14,Vemurafenib,CO,28330972101
+21-Mar-14,16-May-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28330972101
+21-Feb-14,21-Jul-14,Interferon Alfa-2b,NO,28337508202
+27-May-14,24-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28380697201
+24-Feb-14,19-Mar-14,Vemurafenib,CO,28401224401
+20-Mar-14,14-Sep-14,Trametinib Dimethyl Sulfoxide+Vemurafenib,CO,28401224401
+04-Feb-14,28-Jun-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28448208201
+23-Sep-13,20-Oct-13,Temozolomide,CO,28525696001
+19-Jun-13,12-Aug-13,Temozolomide,CO,28609865702
+09-Oct-13,08-Dec-13,Temozolomide,CO,28617623602
+16-Dec-13,14-Jan-14,Vemurafenib,CO,28620189802
+14-Oct-14,16-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28630275701
+26-Sep-14,03-Dec-14,Trametinib Dimethyl Sulfoxide,CO,28634440501
+04-Dec-14,02-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28634440501
+25-Sep-13,21-Feb-14,Vemurafenib,CO,28637294501
+18-Aug-14,14-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28646746702
+31-Jan-14,06-Jul-14,Vemurafenib,CO,28656314302
+09-Oct-14,31-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,28756448301
+08-Oct-14,04-Jan-15,Temozolomide,CO,28760938402
+06-Feb-14,07-Mar-14,Vemurafenib,CO,28769402101
+17-Jun-13,04-Jan-14,Vemurafenib,CO,28769580201
+18-Jul-13,19-Dec-13,Temozolomide,CO,28785973202
+12-Sep-14,27-Jan-15,Interferon Alfa-2b,NO,28795376302
+16-Jul-13,10-Sep-13,Vemurafenib,CO,28806186801
+22-Nov-13,11-Jan-14,Temozolomide,CO,28806186801
+24-Mar-14,19-Jun-14,Interferon Alfa-2b,NO,28812742901
+28-Oct-13,30-Dec-13,Temozolomide,CO,28870445601
+04-Feb-14,05-Mar-14,Dabrafenib,CO,29170007201
+22-Oct-14,18-Dec-14,Vemurafenib,CO,29206608201
+17-Dec-14,28-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,29363459802
+18-Jan-14,08-Apr-14,Vemurafenib,CO,29374370701
+12-Sep-14,30-Nov-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,29376765201
+25-Aug-14,31-Dec-14,Peginterferon Alfa-2b,NO,29400365701
+16-Sep-13,14-Dec-13,Vemurafenib,CO,29421154901
+28-Apr-14,13-Oct-14,Vemurafenib,CO,29449903602
+14-Oct-14,06-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,29449903602
+19-Nov-13,18-Dec-13,Vemurafenib,CO,29484516802
+30-Sep-14,28-Dec-14,Dabrafenib,CO,29484516802
+22-Apr-14,23-May-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,29572276301
+02-Dec-14,03-Feb-15,Temozolomide,CO,29574071601
+22-Dec-14,25-Dec-14,Melphalan,NO,29611987001
+24-Sep-14,25-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,29894137801
+13-Oct-14,10-Jan-15,Vemurafenib,CO,29949610602
+20-Aug-14,16-Sep-14,Temozolomide,CO,30069071503
+26-Sep-14,21-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,30105550901
+25-Jul-13,24-Sep-13,Vemurafenib,CO,30263387201
+28-Oct-14,30-Dec-14,Interferon Alfa-2b,NO,30269209501
+06-Feb-14,20-Feb-14,Fluorouracil,NO,30281439302
+20-Nov-14,16-Jan-15,Fluorouracil,NO,30281439302
+16-Oct-13,31-Dec-13,Vemurafenib,CO,30533002601
+29-Aug-13,16-Nov-13,Temozolomide,CO,30536261801
+16-Oct-14,06-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,30723522501
+24-Sep-14,18-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,30754109601
+25-Oct-13,21-Nov-13,Temozolomide,CO,30913743501
+04-Aug-14,20-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,30913743501
+29-May-14,18-Sep-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,30962689901
+11-Nov-13,24-Mar-14,Interferon Alfa-2b,NO,30971075701
+11-Feb-14,08-Apr-14,Temozolomide,CO,31032608401
+09-Apr-14,17-Feb-15,Interferon Alfa-2b,NO,31033068501
+26-Aug-13,24-Sep-13,Temozolomide,CO,31040819401
+01-Oct-13,04-Jan-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31048658601
+02-Sep-14,20-Oct-14,Capecitabine,NO,31160906701
+09-Dec-14,26-Jan-15,Interferon Alfa-2b,NO,31186888002
+31-Dec-13,29-Jan-14,Vemurafenib,CO,31343578001
+29-Oct-15,07-Apr-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31358051401
+11-Mar-15,05-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31374393301
+05-Jun-14,25-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31393124102
+10-Oct-14,27-Jan-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31410693401
+11-Nov-14,18-Jan-15,Aldesleukin,CO,31631922601
+18-Aug-14,23-Jan-15,Interferon Alfa-2b,NO,31671434001
+09-Oct-13,17-Apr-16,Vemurafenib,CO,31797616201
+29-Jul-13,27-Aug-13,Vemurafenib,CO,31797621201
+05-Nov-13,01-Jan-14,Trametinib Dimethyl Sulfoxide,CO,31797959102
+02-Jan-14,11-May-14,Vemurafenib,CO,31797959102
+12-May-14,29-Jul-14,Dabrafenib,CO,31797959102
+02-Oct-13,31-Oct-13,Vemurafenib,CO,31799341602
+11-Dec-13,03-Feb-14,Temozolomide,CO,31799341602
+20-Jun-14,16-Oct-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31799341602
+09-Feb-15,01-Jun-15,Interferon Alfa-2b,NO,31807275901
+10-Aug-15,27-Jun-16,Temozolomide,CO,31811308201
+11-Dec-14,11-Feb-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31812464401
+31-Dec-14,15-Dec-15,Dasatinib,NO,31899517001
+16-Dec-15,30-Mar-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31899517001
+25-Feb-15,26-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31901842201
+26-Jun-15,04-Feb-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31904773301
+11-May-16,07-Jun-16,Fluorouracil,NO,31921752901
+23-Jan-14,04-Jun-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31929885002
+19-Dec-13,06-Aug-15,Peginterferon Alfa-2b,NO,31940649801
+22-Jul-14,21-Jan-15,Vemurafenib,CO,31942977601
+23-Jan-15,06-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31943790901
+25-Jun-14,17-Sep-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31947023002
+26-Jan-15,25-Jul-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31947023002
+06-Jan-16,15-Feb-16,Cobimetinib+Vemurafenib,CO,31947023002
+30-Oct-14,28-Nov-14,Temozolomide,CO,31958971202
+14-May-15,04-Aug-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,31971911702
+06-Jun-14,05-Aug-14,Dabrafenib,CO,32010856001
+06-Aug-14,06-May-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32010856001
+10-Mar-15,12-Aug-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32014003501
+05-May-15,03-Sep-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32035307501
+23-Jun-16,22-Jul-16,Dabrafenib+Trametinib,CO,32106187301
+02-Dec-14,31-Dec-14,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32112510101
+22-Sep-15,12-Oct-15,Fluorouracil,NO,32123317001
+04-Mar-15,25-Jun-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32167260002
+13-Jan-14,01-Apr-14,Temozolomide,CO,32175149301
+11-Feb-15,21-Nov-15,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32210912401
+22-Oct-15,28-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32211710302
+24-Nov-15,29-Jan-16,Dabrafenib+Trametinib Dimethyl Sulfoxide,CO,32613589501
