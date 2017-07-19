@@ -1,0 +1,296 @@
+data have1;
+length patient_id $15. drug_name $50. ;
+input patient_id (drug_name drug_type) ($) (start end) (: date11.);
+  format start end  date9.;
+  cards;
+41235	Dabrafenib	Core	25-Apr-14	24-May-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	29-Apr-14	28-May-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	30-May-14	28-Jun-14
+41235	Dabrafenib	Core	2-Jun-14	1-Jul-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	4-Aug-14	2-Sep-14
+41235	Dabrafenib	Core	5-Aug-14	3-Sep-14
+41235	Dabrafenib	Core	16-Sep-14	15-Oct-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	16-Sep-14	15-Oct-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	11-Nov-14	11-Nov-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	1-Dec-14	1-Dec-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	21-Dec-14	21-Dec-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	22-Dec-14	22-Dec-14
+41235	Trametinib_Dimethyl_Sulfoxide	Core	21-Jan-15	21-Jan-15
+41235	Trametinib_Dimethyl_Sulfoxide	Core	16-Apr-15	16-Apr-15
+41235	Bevacizumab	Non_core	1-May-15	1-May-15
+41235	Bevacizumab	Non_core	18-May-15	18-May-15
+41235	Bevacizumab	Non_core	2-Jun-15	2-Jun-15
+41235	Bevacizumab	Non_core	16-Jun-15	16-Jun-15
+41235	Bevacizumab	Non_core	8-Jul-15	8-Jul-15
+41235	Bevacizumab	Non_core	22-Jul-15	22-Jul-15
+41235	Bevacizumab	Non_core	5-Aug-15	5-Aug-15
+41235	Bevacizumab	Non_core	25-Aug-15	25-Aug-15
+41235	Bevacizumab	Non_core	17-Sep-15	17-Sep-15
+41235	Bevacizumab	Non_core	1-Oct-15	1-Oct-15
+41235	Bevacizumab	Non_core	14-Oct-15	14-Oct-15
+41235	Bevacizumab	Non_core	27-Oct-15	27-Oct-15
+41235	Bevacizumab	Non_core	13-Nov-15	13-Nov-15
+41235	Bevacizumab	Non_core	4-Dec-15	4-Dec-15
+41235	Bevacizumab	Non_core	24-Dec-15	24-Dec-15
+41235	Bevacizumab	Non_core	15-Jan-16	15-Jan-16
+41235	Bevacizumab	Non_core	5-Feb-16	5-Feb-16
+41235	Bevacizumab	Non_core	26-Feb-16	26-Feb-16
+41235	Bevacizumab	Non_core	18-Mar-16	18-Mar-16
+41235	Bevacizumab	Non_core	8-Apr-16	8-Apr-16
+41235	Pembrolizumab	Core	8-Apr-16	8-Apr-16
+47895624	Ipilimumab	Core	28-May-15	28-May-15
+47895624	Ipilimumab	Core	2-Jul-15	2-Jul-15
+47895624	Ipilimumab	Core	23-Jul-15	23-Jul-15
+47895624	Ipilimumab	Core	13-Aug-15	13-Aug-15
+47895624	Ipilimumab	Core	13-Nov-15	13-Nov-15
+47895624	Ipilimumab	Core	20-Nov-15	20-Nov-15
+47895624	Nivolumab	Core	4-Jan-16	4-Jan-16
+47895624	Nivolumab	Core	19-Jan-16	19-Jan-16
+47895624	Nivolumab	Core	1-Feb-16	1-Feb-16
+47895624	Ipilimumab	Core	15-Feb-16	15-Feb-16
+47895624	Nivolumab	Core	15-Feb-16	15-Feb-16
+47895624	Nivolumab	Core	29-Feb-16	29-Feb-16
+47895624	Nivolumab	Core	14-Mar-16	14-Mar-16
+47895624	Nivolumab	Core	28-Mar-16	28-Mar-16
+78945625	Carboplatin	Non_core	1-Oct-13	1-Oct-13
+78945625	Paclitaxel	Non_core	1-Oct-13	1-Oct-13
+78945625	Carboplatin	Non_core	7-Oct-13	7-Oct-13
+78945625	Paclitaxel	Non_core	7-Oct-13	7-Oct-13
+78945625	Carboplatin	Non_core	14-Oct-13	14-Oct-13
+78945625	Paclitaxel	Non_core	14-Oct-13	14-Oct-13
+78945625	Carboplatin	Non_core	21-Oct-13	21-Oct-13
+78945625	Paclitaxel	Non_core	21-Oct-13	21-Oct-13
+78945625	Temozolomide	Core	25-Oct-13	21-Nov-13
+78945625	Paclitaxel	Non_core	30-Oct-13	30-Oct-13
+78945625	Paclitaxel	Non_core	5-Nov-13	5-Nov-13
+78945625	Carboplatin	Non_core	13-Nov-13	13-Nov-13
+78945625	Paclitaxel	Non_core	13-Nov-13	13-Nov-13
+78945625	Carboplatin	Non_core	19-Nov-13	19-Nov-13
+78945625	Paclitaxel	Non_core	19-Nov-13	19-Nov-13
+78945625	Carboplatin	Non_core	27-Nov-13	27-Nov-13
+78945625	Paclitaxel	Non_core	27-Nov-13	27-Nov-13
+78945625	Carboplatin	Non_core	4-Dec-13	4-Dec-13
+78945625	Paclitaxel	Non_core	4-Dec-13	4-Dec-13
+78945625	Carboplatin	Non_core	11-Dec-13	11-Dec-13
+78945625	Paclitaxel	Non_core	11-Dec-13	11-Dec-13
+78945625	Paclitaxel	Non_core	27-Dec-13	27-Dec-13
+78945625	Paclitaxel	Non_core	23-Jun-14	27-Jun-14
+78945625	Dabrafenib	Core	4-Aug-14	2-Sep-14
+78945625	Trametinib_Dimethyl_Sulfoxide	Core	4-Aug-14	2-Sep-14
+78945625	Trametinib_Dimethyl_Sulfoxide	Core	17-Sep-14	16-Oct-14
+78945625	Dabrafenib	Core	26-Sep-14	25-Oct-14
+78945625	Dabrafenib	Core	15-Oct-14	15-Oct-14
+78945625	Dabrafenib	Core	21-Nov-14	20-Dec-14
+78945625	Trametinib_Dimethyl_Sulfoxide	Core	21-Nov-14	20-Dec-14
+;
+
+
+
+Proc sort data=have1 out=have;
+by patient_id start;
+run;
+
+data want
+ (keep=patient_id drug start_date end_date lot)
+ ;
+  set have;
+  by patient_id notsorted;
+  format start_date end_date date9.;
+
+  /* look ahead at next record */
+  set have ( firstobs = 2 keep = start drug_type drug_name 
+              rename = (start = next_start drug_type=next_type drug_name=next_drug) )
+      have (      obs = 1 drop = _all_ );
+  next_start = ifn(last.patient_id, (.), next_start );
+  next_type = ifc(last.patient_id, (.), next_type );
+  next_drug = ifc(last.patient_id, (.), next_drug );
+ 
+  /* set length of drug to be wide enough to fix all drugs */
+  length drug $1000.;
+  length hold_drug $1000.;
+  array adrugs(100) $ 30 adrug1-adrug100;
+  array adates(100) adate1-adate100;
+
+  array hold_drugs(100) $ 30  hold_drug1-hold_drug100;
+  array hold_dates(100) hold_date1-hold_date100;
+
+ format adate1-adate20 date9.;
+  retain start_date end_date drug days adrug: adate: hold_drug: hold_date:;
+    
+  /* initialize variables for first record within a given lot */
+  if first.patient_id or counter eq 0 then do;
+    if first.patient_id then do;
+      lot=0;
+      call missing (of adrugs(*));
+      call missing (of adates(*));
+      call missing (of hold_drugs(*));
+      call missing (of hold_dates(*));
+      dcounter=0;
+    end;
+    start_date=start;
+    end_date=end;
+    counter=1;
+    drug='';
+    hold_drug='';
+          
+    if drug_type eq 'Core' then do;
+      drug=drug_name;
+      dcounter+1;
+      adrugs(dcounter)=drug_name;
+      adates(dcounter)=end;
+      do i=1 to dim(adrugs);
+        if (not missing(adrugs(i))) and adates(i) ge start_date then do;
+          if adrugs(i) ne strip(drug_name) then do;
+            drug=catx('+',drug,adrugs(i));
+            end_date=max(end_date,adates(i));
+          end;
+        end;
+        else do;
+          call missing(adrugs(i));
+          call missing(adates(i));
+        end;
+      end;
+    end;
+    else do;
+      call missing (of hold_drugs(*));
+      call missing (of hold_dates(*));
+      hold_drug=drug_name;
+      dcounter+1;
+      hold_drugs(dcounter)=drug_name;
+      hold_dates(dcounter)=end;
+    end;
+    if next_start gt start_date+20 or missing(next_start) then do;
+      days=60;
+      if missing(drug) then do;
+        drug=hold_drug;
+        do i=1 to dim(adrugs);
+          if (not missing(adrugs(i))) and adates(i) ge start_date then do;
+            if strip(drug_name) ne adrugs(i) then drug=catx('+',drug,adrugs(i));
+            end_date=max(end_date,adates(i));
+          end;
+          else do;
+            call missing(adrugs(i));
+            call missing(adates(i));
+          end;
+          if (not missing(hold_drugs(i))) and hold_dates(i) ge start_date then do;
+            if strip(drug_name) ne hold_drugs(i) thend rug=catx('+',drug,hold_drugs(i));
+            end_date=max(end_date,hold_dates(i));
+          end;
+          else do;
+            call missing(hold_drugs(i));
+            call missing(hold_dates(i));
+          end;
+        end;
+        call missing(of hold_drugs(*));
+        call missing(of hold_dates(*));
+        call missing(hold_drug);
+      end;
+    end;
+    else days=21;
+  end;
+  
+  
+  
+  /* if not first record in lot and still within 21 day period check to see if drug in drug list */
+  else if days eq 21 then do;
+    if drug_type eq 'Core' then do;
+      if not findw(drug,strip(drug_name)) then do;
+        drug=catx('+',drug,drug_name);
+        dcounter+1;
+        adrugs(dcounter)=drug_name;
+        adates(dcounter)=end;
+      end;
+      do i=1 to dim(adrugs);
+        if drug_name eq adrugs(i) and adates(i) lt start_date then do;
+          adates(i)=end;
+        end;
+      end;
+      counter+1;
+      end_date=max(end_date,end);
+    end;
+    
+    else if missing(drug) then do;
+      if not findw(hold_drug,strip(drug_name)) then do;
+        hold_drug=catx('+',hold_drug,drug_name);
+        dcounter+1;
+        hold_drugs(dcounter)=drug_name;
+        hold_dates(dcounter)=end;
+      end;
+      do i=1 to dim(adrugs);
+        if drug_name eq hold_drugs(i) and hold_dates(i) lt /*start_date*/ end then do;
+          hold_dates(i)=end;
+        end;
+      end;
+      end_date=max(end_date,end);
+      counter+1;
+    end;
+ 
+    /* add Non_core if lot already has at least one core */
+    else do;
+      if not findw(drug,strip(drug_name)) then do;
+        drug=catx('+',drug,drug_name);
+        dcounter+1;
+        adrugs(dcounter)=drug_name;
+        adates(dcounter)=end;
+      end;
+      counter+1;
+    end;
+
+    if next_start gt start_date+20 or missing(next_start) then do;
+      days=60;
+      if missing(drug) then do;
+        drug=hold_drug;
+        do i=1 to dim(adrugs);
+          if (not missing(adrugs(i))) and adates(i) ge start_date then do;
+/*             drug=catx('+',drug,adrugs(i)); */
+            end_date=max(end_date,adates(i));
+          end;
+          else do;
+            call missing(adrugs(i));
+            call missing(adates(i));
+          end;
+          if (not missing(hold_drugs(i))) and hold_dates(i) ge start_date then do;
+/*             drug=catx('+',drug,hold_drugs(i)); */
+            end_date=max(end_date,hold_dates(i));
+          end;
+          else do;
+            call missing(hold_drugs(i));
+            call missing(hold_dates(i));
+          end;
+        end;
+        call missing(of hold_drugs(*));
+        call missing(of hold_dates(*));
+        call missing(hold_drug);
+      end;
+    end;
+  end;
+
+  /* within 60 day check */
+  else do;
+    days=60;
+    if start le end_date+60 and findw(drug,strip(drug_name)) /*and drug_type eq 'Core'*/ then do;
+      counter+1;
+      end_date=max(end,end_date);
+      do i=1 to dim(adrugs);
+        if adrugs(i) eq strip(drug_name) then do;
+          adates(i)=max(adates(i),end);
+        end;
+      end;
+    end;
+  end;
+*output;
+  
+  /* check to see if last.patient_id or next record indicates new lot */
+  if last.patient_id or
+     (counter gt 0 and
+     days eq 60 and
+     (next_start gt end_date+60 or
+      ((not findw(drug,strip(next_drug))) and
+       next_type eq 'Core')))
+  then do;
+    if not missing(next_start) and next_start le end_date then end_date=next_start-1;
+    lot+1;
+    output;
+    counter=0;
+  end;
+run;
