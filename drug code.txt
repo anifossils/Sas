@@ -1,0 +1,459 @@
+libname anal "E:\Projects\BMS\13948 - Melanoma\Database\Analysis Data";
+libname sasdata "E:\Projects\BMS\13948 - Melanoma\Database\Source SAS Data";
+
+data mel_drg;
+set sasdata.mel_drg;
+keep dx1-dx4 proc1 tsvcdat admdate disdate enrolid ndcnum svcdate daysupp idxdt drug_name;
+run;
+
+data mel_drg_drug;
+set mel_drg;
+where ndcnum ne '';
+keep enrolid ndcnum svcdate daysupp idxdt drug_name type;
+type='DRUG';
+run; 
+
+data anal.ndc_drug3;
+set anal.ndc_drug2;
+if lowcase(compress(NONPROPRIETARYNAME))='fluorouracil(topical)' then NONPROPRIETARYNAME='Fluorouracil';
+if lowcase(compress(NONPROPRIETARYNAME))='trametinib' then NONPROPRIETARYNAME='Trametinib Dimethyl Sulfoxide';
+if lowcase(compress(NONPROPRIETARYNAME))='aldesleukin' then NONPROPRIETARYNAME='INTERLEUKIN-2';
+NONPROPRIETARYNAME=propcase(NONPROPRIETARYNAME);
+if lowcase(compress(NONPROPRIETARYNAME))='peginterferonalfa-2b' then NONPROPRIETARYNAME='Interferon alfa-2b';
+NONPROPRIETARYNAME=propcase(NONPROPRIETARYNAME);
+run;
+
+
+
+proc sql;
+create table mel_drug_data_P2 as
+select a.*, b.NONPROPRIETARYNAME as Generic, b.routename1 as route
+from 
+mel_drg_drug a
+left join
+anal.ndc_drug3 b
+on a.ndcnum=b.ndcnum;
+quit;
+
+data anal.mel_drug_data_P;
+set mel_drug_data_P2;
+generic=propcase(generic);
+route=propcase(route);
+label  generic="generic" route="Route";
+if daysupp = 0 then do;
+if lowcase(strip(route)) = "oral" then daysupp = 28;
+else if route ne '' then daysupp=1;
+end;
+where SVCDATE>=idxdt;
+run;
+
+
+/*Appencd ndc data and proc data*/
+data mel_drug_ndc;
+set anal.mel_drug_data_P;
+keep enrolid generic svcdate daysupp;
+run;
+
+data mel_drug_proc (rename=(drug_name=generic proc_date=svcdate));
+set anal.proc_mel_drug_name2;
+keep enrolid drug_name proc_date daysupp;
+run;
+
+data mel_drug_proc_ndc;
+format generic $100.;
+set mel_drug_ndc mel_drug_proc;
+run;
+
+proc sort data=mel_drug_proc_ndc;
+by enrolid generic svcdate descending daysupp;
+run;
+
+data mel_drug_proc_ndc2;
+set mel_drug_proc_ndc;
+by enrolid generic svcdate descending daysupp;
+if first.svcdate;
+run;
+
+data anal.mel_drug_proc_ndc;
+set mel_drug_proc_ndc2;
+run;
+
+
+
+
+data mel_drug_data_1 (rename=type=drug_type);
+set anal.drug_data_final;
+end=SVCDATE+daysupp-1;
+format end date9.;
+run;
+
+proc sort data=mel_drug_data_1 out=mel_drug_data_2 ;
+by enrolid SVCDATE generic;
+run;
+
+
+proc transpose data = mel_drug_data_2 out = trans_strt prefix = strt;
+	by enrolid;
+	var SVCDATE;
+run;
+
+
+proc transpose data = mel_drug_data_2   out = trans_end prefix = end;
+	by enrolid;
+	var end;
+run;
+
+proc transpose data =mel_drug_data_2    out = trans_generic prefix = generic;
+	by enrolid;
+	var generic;
+run;
+proc transpose data =mel_drug_data_2    out = trans_drug_type prefix = drug_type;
+	by enrolid;
+	var drug_type;
+run;
+
+
+data mel_drug_data_3 (drop = _name_ _LABEL_);
+	merge trans_strt trans_end trans_generic trans_drug_type;
+	by enrolid;
+run;
+
+
+data check;
+retain z;
+length z 5;
+set mel_drug_data_3;
+array strt(136);
+keep enrolid strt1-strt136 z;
+z=N(of strt:);
+run;
+
+
+%let max_drug=136;
+
+/*proc sort data=mel_drug_data_4 out=y nodupkey;*/
+/*by enrolid start_lot end_lot  cut_lot regimen_lot regimen_type;*/
+/*run;*/
+/**/
+data mel_drug_data_4 (drop=strt: end1-end136 generic: drug_type:);
+	retain start_LOT end_LOT regimen_LOT type_LOT cut_LOT regimen_type d m z overlap_drug strt_reg; 
+	format   start_LOT end_LOT cut_LOT date9.;
+	format type_LOT $11.;
+	format regimen_LOT $500.;
+	format  overlap_drug $250.;
+	set mel_drug_data_3;
+	array strt(&max_drug);
+	array end(&max_drug);
+	array generic(&max_drug) $ ;
+	array drug_type(&max_drug) $;
+if _n_ = 1 then z= N(of strt:);
+else z= N(of strt:)-1;
+/*k denotes LOT count*/
+do i=1 to z;
+		if i=1 then do;
+			start_LOT=strt(i);
+			regimen_LOT=strip(generic(i));
+			type_LOT=drug_type(i);
+			end_LOT=end(i);
+			cut_LOT=strt(i)+21-1;
+			m=i;  *storing new index;
+			d=1;  *restricting end date updates; 
+			strt_reg=i;
+			overlap_drug='';
+			if z=1 then do;
+					if index(type_LOT,'C')>0 and index(type_LOT,'N')=0 then regimen_type='CO';
+					else if index(type_LOT,'C')>0 and index(type_LOT,'N')>0 then regimen_type='CN';
+					else if index(type_LOT,'C')=0 and index(type_LOT,'N')>0 then regimen_type='NO';
+				output;
+			end;
+		end;
+		else if i ne 1 then do;
+			if strt(i)<=cut_LOT then do;
+					regimen_LOT=strip(regimen_LOT)||','||strip(generic(i));
+					type_LOT=strip(type_LOT)||strip(DRUG_TYPE(i));
+					d=1;
+					if i=z then do;
+					if index(type_LOT,'C')>0 and index(type_LOT,'N')=0 then regimen_type='CO';
+					else if index(type_LOT,'C')>0 and index(type_LOT,'N')>0 then regimen_type='CN';
+					else if index(type_LOT,'C')=0 and index(type_LOT,'N')>0 then regimen_type='NO';
+
+		/*			Assign maximum end date to end_LOT based upon type of regimen*/
+					if regimen_type='CO' then do;
+					do h=m to i;
+					if drug_type(h)='C' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+					else if regimen_type='CN' then do;
+					do h=m to i;
+					if drug_type(h)='C' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+					
+					else if regimen_type='NO' then do;
+					do h=m to i;
+					if drug_type(h)='N' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+					d=0;
+					output;
+				
+					end;
+					
+			end;			
+			else if strt(i)>cut_LOT then do; 
+			if d=1 then do;
+					if index(type_LOT,'C')>0 and index(type_LOT,'N')=0 then regimen_type='CO';
+					else if index(type_LOT,'C')>0 and index(type_LOT,'N')>0 then regimen_type='CN';
+					else if index(type_LOT,'C')=0 and index(type_LOT,'N')>0 then regimen_type='NO';
+
+		/*			Assign maximum end date to end_LOT based upon type of regimen*/
+					if regimen_type='CO' then do;
+					do h=m to i-1;
+					if drug_type(h)='C' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+
+					else if regimen_type='CN' then do;
+					do h=m to i-1;
+					if drug_type(h)='C' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+					
+					else if regimen_type='NO' then do;
+					do h=m to i-1;
+					if drug_type(h)='N' then end_LOT=max(end_LOT,end(h));
+					end;
+					end;
+
+			d=0;
+			end;
+			
+			if strt(i)<=end_LOT+60  then do;
+
+	
+				if regimen_type='CO'  then do; 
+						if drug_type(i) ne 'N' then do;
+						if index(strip(regimen_LOT), strip(generic(i)))>0 and drug_type(i)='C' then do;
+						end_LOT=max(end_LOT, end(i));
+						end;
+						else if overlap_drug ne '' and drug_type(i)='C' and index(strip(overlap_drug), strip(generic(i)))>0 then do;
+						regimen_LOT=strip(regimen_LOT)||','||strip(generic(i));
+						end_LOT=max(end_LOT, end(i));
+						end;
+
+						else if index(strip(regimen_LOT), strip(generic(i)))=0 and index(strip(overlap_drug), strip(generic(i)))= 0  
+						and drug_type(i)='C' then do;
+						if strt(i)<=end_LOT then do;
+						end_LOT=strt(i)-1;
+						overlap_drug='';			
+							do r=strt_reg to i-1;
+								if strt(i)<=end(r) then overlap_drug=strip(overlap_drug)||','||strip(generic(r));
+							end;
+							end;
+						output;
+						
+						start_LOT=strt(i);
+						regimen_LOT=strip(generic(i));
+						type_LOT=drug_type(i);
+						end_LOT=end(i);
+						cut_LOT=strt(i)+21-1;
+						m=i;
+						d=1;
+						strt_reg=i;
+						end;
+						end;
+				end;
+
+				if regimen_type='NO' then do; 
+						if index(strip(regimen_LOT), strip(generic(i)))>0 and drug_type(i)='N' then do;
+						end_LOT=max(end_LOT, end(i));
+						end;
+/*						else if index(strip(regimen_LOT), strip(generic(i)))=0 and drug_type(i)='N' then do;*/
+/*						end_LOT=end_LOT;*/
+/*						end;*/
+						else if drug_type(i)='C' then do;
+						if strt(i) > end_LOT then end_LOT=end_LOT;
+						else if strt(i)<=end_LOT then do;
+						overlap_drug='';
+							end_LOT=strt(i)-1;
+/*							do r=strt_reg to i-1;*/
+/*								if strt(i)<=end(r) then overlap_drug=strip(overlap_drug)||','||strip(generic(r));*/
+/*							end;*/
+						end;
+
+						output;
+						start_LOT=strt(i);
+						regimen_LOT=strip(generic(i));
+						type_LOT=drug_type(i);
+						end_LOT=end(i);
+						cut_LOT=strt(i)+21-1;
+						m=i;
+						d=1;
+						strt_reg=i;
+						end;
+				end;
+
+				if regimen_type='CN' then do; 
+						if drug_type(i) ne 'N' then do;
+						if index(strip(regimen_LOT), strip(generic(i)))>0 and drug_type(i)='C' then do;
+						end_LOT=max(end_LOT, end(i));
+						strt_max=max(strt(i),strt_max);
+						end;
+
+						else if overlap_drug ne '' and drug_type(i)='C' and index(strip(overlap_drug), strip(generic(i)))>0 then do;
+						regimen_LOT=strip(regimen_LOT)||','||strip(generic(i));
+						end_LOT=max(end_LOT, end(i));
+						end;
+
+						else if index(strip(regimen_LOT), strip(generic(i)))=0 and index(strip(overlap_drug), strip(generic(i)))=0 and
+						drug_type(i)='C' then do;
+						if strt(i)<=end_LOT then do;
+						end_LOT=strt(i)-1;
+						overlap_drug='';			
+							do r=strt_reg to i-1;
+								if strt(i)<=end(r) then overlap_drug=strip(overlap_drug)||','||strip(generic(r));
+							end;
+							end;
+						output;
+						start_LOT=strt(i);
+						regimen_LOT=strip(generic(i));
+						type_LOT=drug_type(i);
+						end_LOT=end(i);
+						cut_LOT=strt(i)+21-1;
+						m=i;
+						d=1;
+						strt_reg=i;
+						end;
+						end;
+				end;
+			if i=z then output;
+			end;
+
+
+		
+
+		else if strt(i)>end_LOT+60  then do;
+		
+		
+		output;
+
+		start_LOT=strt(i);
+		regimen_LOT=strip(generic(i));
+		type_LOT=drug_type(i);
+		end_LOT=end(i);
+		cut_LOT=strt(i)+21-1;
+		m=i;
+		d=1;
+		strt_reg=i;
+		if i=z then output;
+		end;
+end;
+		end;
+	end;
+run;
+
+/*Remove commas in the end*/
+
+data mel_drug_data_5;  
+	set mel_drug_data_4; 
+	check=substr(regimen_LOT,length(regimen_LOT),1);
+	if check=',' then substr(regimen_LOT,length(regimen_LOT),1)='';
+run;
+
+data mel_drug_data_6_dlm   mel_drug_data_6_ (drop=temp_regimen flag_dlm i dlm count); 
+   set mel_drug_data_5 ;
+   retain count; 
+    dlm=count(regimen_LOT,',')+1; 
+	if count(regimen_LOT,',') then count+1; 
+	   if count(regimen_LOT,',')>0 then do i=1 to dlm; 
+	      temp_regimen=scan(regimen_LOT,i,',');
+	        flag_dlm=1; 
+	      output mel_drug_data_6_dlm;  
+	    end; 
+     else output mel_drug_data_6_; 
+run; 
+
+proc sort data=mel_drug_data_6_dlm; 
+	by enrolid count temp_regimen; 
+run; 
+
+data mel_drug_data_7_dlm (keep= enrolid start_LOT end_LOT regimen_LOT  regimen_type); 
+	set mel_drug_data_6_dlm;
+	by enrolid count temp_regimen; 
+	retain new_regimen; 
+	if first.count then new_regimen=temp_regimen; 
+	else if index(compress(new_regimen),compress(temp_regimen))=0 then new_regimen=strip(new_regimen)||'+'||strip(temp_regimen); 
+	if last.count;
+	regimen_LOT=new_regimen; 
+run;  
+
+data mel_drug_data_8;
+set mel_drug_data_7_dlm mel_drug_data_6_ (keep= enrolid start_LOT end_LOT regimen_LOT );
+run;
+
+proc sort data=mel_drug_data_8 out=mel_drug_data_9;
+by enrolid start_LOT end_LOT regimen_LOT;
+run;
+/**/
+/*data anal.regimen_final;*/
+/*set mel_drug_data_9;*/
+/*run;*/
+
+data anal.regimen_final21July2017;
+set mel_drug_data_9;
+run;
+
+
+%let max_drug=5;
+
+data mel_drug_data_10;
+	set anal.regimen_final21July2017;
+	array reg_temp(&max_drug.) $50.;
+    dlm=count(regimen_LOT,'+')+1; 
+	do i=1 to dlm;
+	reg_temp(i)=scan(regimen_LOT,i,'+');
+    end;
+run;
+
+
+proc sql;
+create table mel_drug_data_11 as
+select a.*,
+b.type as type1,
+c.type as type2,
+d.type as type3,
+e.type as type4,
+f.type as type5
+
+from 
+mel_drug_data_10 a
+left join
+anal.drug_type_generic b
+on lowcase(compress(a.reg_temp1))=lowcase(compress(b.generic)) and a.reg_temp1 ne ''
+
+
+left join
+anal.drug_type_generic c
+on lowcase(compress(a.reg_temp2))=lowcase(compress(c.generic)) and a.reg_temp2 ne ''
+
+left join
+anal.drug_type_generic d
+on lowcase(compress(a.reg_temp3))=lowcase(compress(d.generic)) and a.reg_temp3 ne ''
+
+left join
+anal.drug_type_generic e
+on lowcase(compress(a.reg_temp4))=lowcase(compress(e.generic)) and a.reg_temp4 ne ''
+
+left join
+anal.drug_type_generic f
+on lowcase(compress(a.reg_temp5))=lowcase(compress(f.generic)) and a.reg_temp5 ne '';
+quit;
+
+
+
+
+
+
+
+	
+
