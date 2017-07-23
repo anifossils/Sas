@@ -5,6 +5,11 @@ set anal.drug_data_final;
 rename type = drug_type;
 run;
 
+Proc sql;
+insert into Mel_drug_data_p
+values( "Ipilimumab",8465978956,'19SEP2013'd,1,"DRU","N");
+quit;
+
 Data regimen_2(keep= ENROLID SVCDATE  drug_type1 end generic drug_type rename=(generic=drug_name 
 drug_type1=drug_type SVCDATE=start enrolid=patient_id) drop =drug_type);
 set Mel_drug_data_p;
