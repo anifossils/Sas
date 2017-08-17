@@ -1,0 +1,82 @@
+
+
+data grocery;
+   input Sector $ Manager $ Department $ Sales @@;
+   datalines;
+se 1 np1 50    se 1 p1 100   se 1 np2 120   se 1 p2 80
+se 2 np1 40    se 2 p1 300   se 2 np2 220   se 2 p2 70
+nw 3 np1 60    nw 3 p1 600   nw 3 np2 420   nw 3 p2 30
+nw 4 np1 45    nw 4 p1 250   nw 4 np2 230   nw 4 p2 73
+nw 9 np1 45    nw 9 p1 205   nw 9 np2 420   nw 9 p2 76
+sw 5 np1 53    sw 5 p1 130   sw 5 np2 120   sw 5 p2 50
+sw 6 np1 40    sw 6 p1 350   sw 6 np2 225   sw 6 p2 80
+ne 7 np1 90    ne 7 p1 190   ne 7 np2 420   ne 7 p2 86
+ne 8 np1 200   ne 8 p1 300   ne 8 np2 420   ne 8 p2 125
+;
+run;
+ods html;
+proc report data=grocery  headline;
+   title;
+ 	
+   column ('Individual Store Sales as a Percent of All Sales'
+            sector manager sales,(sum pctsum) test);
+	
+   define manager / group
+                    format=$10.;
+   define sector / group
+                   format=$10.;
+   define sales / format=11.2
+                  '';
+   define sum / format=9.2
+                'Total Sales';
+	
+   define pctsum / 'Percent of Sales' format=percent6. width=8;
+   define test / computed ;
+	
+   compute test / char length=40;
+ 
+      test=cat(put(sales.sum,11.2)," (",put((sales.pctsum)*100,6.0),"%)");
+   endcomp;
+ 	
+   rbreak after / ol summarize;
+run;
+
+
+Libname anal "E:\Projects\Abbvie\SCLC_13795\Database\Analysis Data";
+
+data regimen_flag_ae_ggn;
+set anal.regimen_flag_ae_ggn;
+if ae='Photosensitivity' then ae='ZPhotosensitivity';
+run;
+
+Proc report data=regimen_flag_ae_ggn ;
+column ae prior_ae_c1(n);
+define ae /group;
+define prior_ae_c1/ n ;
+
+run;
+
+option mprint symbolgen;
+
+
+%macro AE_report;
+
+%do i=1 %to 4;
+Title "Criterion &i., LOT1-LOT4";
+proc tabulate data=regimen_flag_ae_ggn (where=(PRIOR_AE_C&i.='N' ));
+class PRIOR_AE_C&i. ae lot_cnt_new FLAG_AE_C&i.;
+var TIME_TO_ONSET_C&i. C&i._Cnt;
+tables ae, lot_cnt_new*(PRIOR_AE_C&i. (PRIOR_AE_C&i. * FLAG_AE_C&i.) (PRIOR_AE_C&i. * C&i._Cnt*(sum ))
+(PRIOR_AE_C&i. * TIME_TO_ONSET_C&i. * (mean std  median Q1 Q3 min max)));
+run; 
+%end;
+
+ods html close;
+%mend;
+
+%AE_report;
+
+
+
+
+       
