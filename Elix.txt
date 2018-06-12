@@ -1,0 +1,719 @@
+
+
+Libname anal "E:\Projects\Janssen\MM pneumonia - 14149\Database\Analysis Data";
+
+
+
+Data yy;
+set anal.Elixhauser_data_31may;
+overall="Y";
+run;
+
+
+
+options mprint mlogic symbolgen;
+
+
+%macro freq(Var1=);
+
+%let category = vd rd vrd vcd vmp other overall;
+%do i=1 %to 7;
+%let var=%scan (&category.,&i.);
+Proc freq data=yy;
+tables database*&var1./out=elx_sy_&var._&var1. noprint outpct;
+where &var. ="Y" and PNEU_DIAG1="Y" ;
+run;
+
+Data elx_sy_&var._&var1.;
+set elx_sy_&var._&var1.(keep = database &var1. count pct_row rename=(pct_row=percent));
+where &var1.=1;
+format commor $20.;
+commor = "&var1.";
+&var._cnt_prcnt_y=cat( compress(put(count, 8.)), " (", compress(put(percent,8.1)),"%", ")");
+keep database commor &var._cnt_prcnt_y;
+run;
+
+%end;
+
+%mend;
+
+%Freq(Var1 = CHF);
+%Freq(Var1 = ARR);
+%Freq(Var1 = VALV);
+%Freq(Var1 = PULM);
+
+%Freq(Var1 = VASC);
+%Freq(Var1 = HYPERSIMP);
+%Freq(Var1 = HYPERCOMP);
+%Freq(Var1 = PARA);
+%Freq(Var1 = NEUR);
+%Freq(Var1 = CPD);
+%Freq(Var1 = DIABSIMP);
+
+%Freq(Var1 = DIABCOMP);
+%Freq(Var1 = HYPO);
+
+%Freq(Var1 = RENAL);
+%Freq(Var1 = LIVER);
+%Freq(Var1 = ULC);
+%Freq(Var1 = AIDS);
+%Freq(Var1 = LYMPH);
+%Freq(Var1 = METACAN);
+%Freq(Var1 = TUMOR);
+
+%Freq(Var1 = RA);
+%Freq(Var1 = COAG);
+%Freq(Var1 = OBES);
+%Freq(Var1 = WEIGHTL);
+%Freq(Var1 = FLUID);
+%Freq(Var1 = BLANEM);
+%Freq(Var1 = DEFANEM);
+%Freq(Var1 = ALC);
+
+%Freq(Var1 = DRUGS);
+%Freq(Var1 = PSYCH);
+%Freq(Var1 = DEP);
+%Freq(Var1 = any);
+%Freq(Var1 = HYPERANY);
+%Freq(Var1 = DIABANY);
+
+DAta elix_y;
+merge elx_sy_:;
+by database commor;
+run;
+
+
+%macro freq1(Var1=);
+
+%let category = vd rd vrd vcd vmp other overall;
+%do i=1 %to 7;
+%let var=%scan (&category.,&i.);
+Proc freq data=yy;
+tables database*&var1./out=elx_sn_&var._&var1. noprint outpct;
+where &var. ="Y" and PNEU_DIAG1="N" ;
+run;
+
+Data elx_sN_&var._&var1.;
+set elx_sN_&var._&var1.(keep = database count &var1. pct_row rename=(pct_row=percent));
+where  &var1.=1;
+format commor $20.;
+commor = "&var1.";
+&var._cnt_prcnt_N=cat( compress(put(count, 8.)), " (", compress(put(percent,8.1)),"%", ")");
+keep database commor &var._cnt_prcnt_N;
+run;
+
+%end;
+
+%mend;
+
+
+%freq1(Var1 = CHF);
+%freq1(Var1 = ARR);
+%freq1(Var1 = VALV);
+%freq1(Var1 = PULM);
+
+%freq1(Var1 = VASC);
+%freq1(Var1 = HYPERSIMP);
+%freq1(Var1 = HYPERCOMP);
+%freq1(Var1 = PARA);
+%freq1(Var1 = NEUR);
+%freq1(Var1 = CPD);
+%freq1(Var1 = DIABSIMP);
+
+%freq1(Var1 = DIABCOMP);
+%freq1(Var1 = HYPO);
+
+%freq1(Var1 = RENAL);
+%freq1(Var1 = LIVER);
+%freq1(Var1 = ULC);
+%freq1(Var1 = AIDS);
+%freq1(Var1 = LYMPH);
+%freq1(Var1 = METACAN);
+%freq1(Var1 = TUMOR);
+
+%freq1(Var1 = RA);
+%freq1(Var1 = COAG);
+%freq1(Var1 = OBES);
+%freq1(Var1 = WEIGHTL);
+%freq1(Var1 = FLUID);
+%freq1(Var1 = BLANEM);
+%freq1(Var1 = DEFANEM);
+%freq1(Var1 = ALC);
+
+%freq1(Var1 = DRUGS);
+%freq1(Var1 = PSYCH);
+%freq1(Var1 = DEP);
+%freq1(Var1 = any);
+%freq1(Var1 = HYPERANY);
+%freq1(Var1 = DIABANY);
+
+DAta elix_n;
+merge elx_sn_:;
+by database commor;
+run;
+
+
+Proc sql;
+create table all_elix
+as select COALESCE(a.database,b.database) as database,
+COALESCE(a.commor,b.commor) as commor ,a.vd_CNT_PRCNT_Y,b.vd_CNT_PRCNT_n,a.rd_CNT_PRCNT_Y,b.rd_CNT_PRCNT_n
+,a.vrd_CNT_PRCNT_Y,b.vrd_CNT_PRCNT_n,a.vcd_CNT_PRCNT_Y,b.vcd_CNT_PRCNT_n,a.vmp_CNT_PRCNT_Y,b.vmp_CNT_PRCNT_n,
+a.other_CNT_PRCNT_Y,b.other_CNT_PRCNT_n,a.overall_CNT_PRCNT_Y,b.overall_CNT_PRCNT_n 
+from elix_y as a
+left join
+elix_n as b
+on compress(lowcase(a.database))=compress(lowcase(b.database)) and compress(lowcase(a.commor))=compress(lowcase(b.commor));
+quit;
+
+
+Proc sql;
+create table  all_elix_Medicare
+as select database, commor,vd_CNT_PRCNT_Y,vd_CNT_PRCNT_n,rd_CNT_PRCNT_Y,rd_CNT_PRCNT_n,vrd_CNT_PRCNT_Y,vrd_CNT_PRCNT_n,
+                   vcd_CNT_PRCNT_Y,vcd_CNT_PRCNT_n,vmp_CNT_PRCNT_Y,vmp_CNT_PRCNT_n,
+                           other_CNT_PRCNT_Y,other_CNT_PRCNT_n,overall_CNT_PRCNT_Y,overall_CNT_PRCNT_n 
+                   
+              from all_elix
+where database = "Medicare";
+quit;
+
+Proc sql;
+create table  all_elix_optum
+as select database, commor,vd_CNT_PRCNT_Y,vd_CNT_PRCNT_n,rd_CNT_PRCNT_Y,rd_CNT_PRCNT_n,vrd_CNT_PRCNT_Y,vrd_CNT_PRCNT_n,
+                   vcd_CNT_PRCNT_Y,vcd_CNT_PRCNT_n,vmp_CNT_PRCNT_Y,vmp_CNT_PRCNT_n,
+                           other_CNT_PRCNT_Y,other_CNT_PRCNT_n,overall_CNT_PRCNT_Y,overall_CNT_PRCNT_n 
+                   
+              from all_elix
+where database = "Optum";
+quit;
+
+Proc sql;
+create table  all_elix_oldoptum
+as select database, commor,vd_CNT_PRCNT_Y,vd_CNT_PRCNT_n,rd_CNT_PRCNT_Y,rd_CNT_PRCNT_n,vrd_CNT_PRCNT_Y,vrd_CNT_PRCNT_n,
+                   vcd_CNT_PRCNT_Y,vcd_CNT_PRCNT_n,vmp_CNT_PRCNT_Y,vmp_CNT_PRCNT_n,
+                           other_CNT_PRCNT_Y,other_CNT_PRCNT_n,overall_CNT_PRCNT_Y,overall_CNT_PRCNT_n 
+                   
+              from all_elix
+where database = "Old Optum";
+quit;
+
+Data all_elix_oldoptum1;
+run;
+
+data all_elix_oldoptum;
+set all_elix_oldoptum all_elix_oldoptum1;
+if database="" then database="Old Optum";
+if commor ="" then commor="aids";
+run;
+
+
+/*P vlue calculations */
+
+%macro Trt(Trt=,var2=);
+
+
+data with_Elix;
+	set anal.Elixhauser_data_31may;
+	Overall = 'Y';
+	where database="&Var2";
+run;
+
+Data anal_1;
+Format Category $100.;
+run;
+
+%macro Freq (Var1);
+
+Proc freq data=with_Elix;
+table &Var1.*pneu_diag1/ out = D1 noprint;
+where &Trt. = 'Y';
+run;
+
+Proc freq data=with_Elix;
+table &Var1.*pneu_diag1/ out = P1 noprint;
+where &Trt. = 'Y';
+run;
+
+Proc sort data=D1; by &Var1.; run;
+
+Proc transpose data=D1 out = D2 (rename = (&var1. = Category));
+By &Var1.;
+Var count;
+id pneu_diag1;
+run;
+
+Data D5;
+format category $20.;
+Category = " &var1." ;
+run;
+
+data d2 (drop=category rename=(d21=category));
+	set d2;
+d21 = put(category,20.);
+run;
+
+Data anal_&var1.;
+Set D5 D2 ;
+run;
+
+*pvalue by Pearson Chi-square;
+
+Proc freq data=with_Elix;
+table &Var1.*pneu_diag1/Chisq noprint;
+Output out = P1_&Var1. MHCHI FISHER;
+where &Trt. = 'Y';
+run;
+
+Data P2_&Var1.;
+Format Category $100.;
+set P1_&Var1.;
+Category = " &var1." ;
+drop _MHCHI_ DF_MHCHI XPL_FISH XPR_FISH;
+run;
+
+proc sort data=anal_&var1.  ;
+by category;
+run;
+
+proc sort data=P2_&var1.  ;
+by category;
+run;
+
+Data Anal_11_&var1.;
+merge anal_&var1. P2_&var1.;
+by Category;
+run;
+
+data Anal_11_&var1.;
+	set Anal_11_&var1.;
+format p_mhchi 8.4;
+run;
+
+data anal_1 ;
+set anal_1 Anal_11_&var1.;
+run;
+
+%mend;
+/*CHF ARR VALV PULM VASC HYPERSIMP HYPERCOMP PARA NEUR CPD DIABSIMP DIABCOMP HYPO */
+/*RENAL LIVER ULC AIDS LYMPH METACAN TUMOR RA COAG OBES WEIGHTL FLUID BLANEM DEFANEM ALC */
+/*DRUGS PSYCH DEP NUM_ANY ANY HYPERANY DIABANY*/
+
+
+%Freq(Var1 = CHF);
+%Freq(Var1 = ARR);
+%Freq(Var1 = VALV);
+%Freq(Var1 = PULM);
+
+%Freq(Var1 = VASC);
+%Freq(Var1 = HYPERSIMP);
+%Freq(Var1 = HYPERCOMP);
+%Freq(Var1 = PARA);
+%Freq(Var1 = NEUR);
+%Freq(Var1 = CPD);
+%Freq(Var1 = DIABSIMP);
+
+%Freq(Var1 = DIABCOMP);
+%Freq(Var1 = HYPO);
+
+%Freq(Var1 = RENAL);
+%Freq(Var1 = LIVER);
+%Freq(Var1 = ULC);
+%Freq(Var1 = AIDS);
+%Freq(Var1 = LYMPH);
+%Freq(Var1 = METACAN);
+%Freq(Var1 = TUMOR);
+
+%Freq(Var1 = RA);
+%Freq(Var1 = COAG);
+%Freq(Var1 = OBES);
+%Freq(Var1 = WEIGHTL);
+%Freq(Var1 = FLUID);
+%Freq(Var1 = BLANEM);
+%Freq(Var1 = DEFANEM);
+%Freq(Var1 = ALC);
+
+%Freq(Var1 = DRUGS);
+%Freq(Var1 = PSYCH);
+%Freq(Var1 = DEP);
+%Freq(Var1 = any);
+%Freq(Var1 = HYPERANY);
+%Freq(Var1 = DIABANY);
+
+Data anal_1;
+	set anal_1;
+if compress(category) ne "0";
+run;
+
+%let var3=%sysfunc(compress(&var2.));
+
+Data anal_pval_&trt._&var3.(drop= XP2_FISH rename=(XP2_FISH2=&trt._&var3._p));
+	set anal_1;
+where category not in ("","                   1");
+XP2_FISH1=compress(put(XP2_FISH,8.4));
+if XP2_FISH1 ="1.0000" then XP2_FISH2=">.9999";
+else if XP2_FISH1="0.0000" then  XP2_FISH2="<.0001";
+else XP2_FISH2=XP2_FISH1;
+category=compress(lowcase(category));
+keep category XP2_FISH XP2_FISH2;
+run;
+
+Proc sort data=anal_pval_&trt._&var3.;
+by category;
+run;
+
+%mend;
+
+
+%Trt(Trt = Vd,var2=Medicare);
+%Trt(Trt = Rd,var2=Medicare);
+%Trt(Trt = Vrd,var2=Medicare);
+%Trt(Trt = Vcd,var2=Medicare);
+%Trt(Trt = VMP,var2=Medicare);
+%Trt(Trt = Other,var2=Medicare);
+%Trt(Trt = Overall,var2=Medicare);
+
+%Trt(Trt = Vd,var2=Old Optum);
+%Trt(Trt = Rd,var2=Old Optum);
+%Trt(Trt = Vrd,var2=Old Optum);
+%Trt(Trt = Vcd,var2=Old Optum);
+%Trt(Trt = VMP,var2=Old Optum);
+%Trt(Trt = Other,var2=Old Optum);
+%Trt(Trt = Overall,var2=Old Optum);
+
+
+%Trt(Trt = Vd,var2=Optum);
+%Trt(Trt = Rd,var2=Optum);
+%Trt(Trt = Vrd,var2=Optum);
+%Trt(Trt = Vcd,var2=Optum);
+%Trt(Trt = VMP,var2=Optum);
+%Trt(Trt = Other,var2=Optum);
+%Trt(Trt = Overall,var2=Optum);
+
+Data all_pval;
+merge anal_pval_:;
+by category;
+run;
+
+
+
+Proc sql;
+create table  all_Medicare1
+as select database, commor,vd_CNT_PRCNT_Y,vd_CNT_PRCNT_n,vd_medicare_p,rd_CNT_PRCNT_Y,rd_CNT_PRCNT_n,rd_medicare_p,
+vrd_CNT_PRCNT_Y,vrd_CNT_PRCNT_n,vrd_medicare_p,vcd_CNT_PRCNT_Y,vcd_CNT_PRCNT_n,vcd_medicare_p,vmp_CNT_PRCNT_Y,
+vmp_CNT_PRCNT_n,vmp_medicare_p, other_CNT_PRCNT_Y,other_CNT_PRCNT_n,other_medicare_p,overall_CNT_PRCNT_Y,overall_CNT_PRCNT_n ,
+overall_medicare_p from all_elix_Medicare as a
+left join 
+all_pval as b
+on compress(lowcase(a.commor))=compress(lowcase(b.category));
+quit;
+
+Data all_medicare1;
+set all_medicare1;
+if     lowcase(commor)='chf'       then     ord=1;
+if     lowcase(commor)='arr'       then     ord=2;
+if     lowcase(commor)='valv'       then     ord=3;
+if     lowcase(commor)='pulm'       then     ord=4;
+if     lowcase(commor)='vasc'       then     ord=5;
+if     lowcase(commor)='hypersimp'       then     ord=6;
+if     lowcase(commor)='hypercomp'       then     ord=7;
+if     lowcase(commor)='para'       then     ord=8;
+if     lowcase(commor)='neur'       then     ord=9;
+if     lowcase(commor)='cpd'       then     ord=10;
+if     lowcase(commor)='diabsimp'       then     ord=11;
+if     lowcase(commor)='diabcomp'       then     ord=12;
+if     lowcase(commor)='hypo'       then     ord=13;
+if     lowcase(commor)='renal'       then     ord=14;
+if     lowcase(commor)='liver'       then     ord=15;
+if     lowcase(commor)='ulc'       then     ord=16;
+if     lowcase(commor)='aids'       then     ord=17;
+if     lowcase(commor)='lymph'       then     ord=18;
+if     lowcase(commor)='metacan'       then     ord=19;
+if     lowcase(commor)='tumor'       then     ord=20;
+if     lowcase(commor)='ra'       then     ord=21;
+if     lowcase(commor)='coag'       then     ord=22;
+if     lowcase(commor)='obes'       then     ord=23;
+if     lowcase(commor)='weightl'       then     ord=24;
+if     lowcase(commor)='fluid'       then     ord=25;
+if     lowcase(commor)='blanem'       then     ord=26;
+if     lowcase(commor)='defanem'       then     ord=27;
+if     lowcase(commor)='alc'       then     ord=28;
+if     lowcase(commor)='drugs'       then     ord=29;
+if     lowcase(commor)='psych'       then     ord=30;
+if     lowcase(commor)='dep'       then     ord=31;
+if     lowcase(commor)='any'       then     ord=32;
+if     lowcase(commor)='hyperany'       then     ord=33;
+if     lowcase(commor)='diabany'       then     ord=34;
+
+if vd_CNT_PRCNT_Y="" and vd_CNT_PRCNT_n="" then do;
+vd_medicare_p="NA";
+vd_CNT_PRCNT_Y="0 (0.0%)";
+vd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if rd_CNT_PRCNT_Y="" and rd_CNT_PRCNT_n = "" then do;
+rd_medicare_p ="NA";
+rd_CNT_PRCNT_Y="0 (0.0%)";
+rd_CNT_PRCNT_n ="0 (0.0%)";
+end;
+if vrd_CNT_PRCNT_y="" and vrd_CNT_PRCNT_n="" then do;
+vrd_medicare_p="NA";
+vrd_CNT_PRCNT_y="0 (0.0%)";
+vrd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if vcd_CNT_PRCNT_Y="" and vcd_CNT_PRCNT_n="" then do;
+vcd_medicare_p="NA";
+vcd_CNT_PRCNT_Y="0 (0.0%)";
+vcd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if vmp_CNT_PRCNT_Y="" and vmp_CNT_PRCNT_n="" then do
+vmp_medicare_p="NA" ;
+vmp_CNT_PRCNT_Y="0 (0.0%)";
+vmp_CNT_PRCNT_n="0 (0.0%)";
+end;
+if other_CNT_PRCNT_Y="" and other_CNT_PRCNT_n="" then do;
+other_medicare_p="NA";
+other_CNT_PRCNT_Y="0 (0.0%)";
+other_CNT_PRCNT_n="0 (0.0%)";
+end;
+if overall_CNT_PRCNT_Y="" and overall_CNT_PRCNT_n="" then do;
+overall_medicare_p ="NA";
+overall_CNT_PRCNT_Y="0 (0.0%)";
+overall_CNT_PRCNT_n="0 (0.0%)";
+end;
+
+run;
+
+Proc sort data=all_medicare1 out=all_medicare(drop=database ord);
+by ord;
+run;
+
+Data all_medicare(drop=i);
+set all_medicare;
+array char $ _character_;
+do i=1 to dim(char);
+if char{i}="" then char{i}="0 (0.0%)";
+end;
+run;
+
+proc export data=all_medicare outfile="E:\Projects\Janssen\MM pneumonia - 14149\Database\Tables\all_medicare_elix.csv"
+dbms=csv replace;
+run;
+
+
+
+Proc sql;
+create table  all_optum1
+as select database, commor,vd_CNT_PRCNT_Y,vd_CNT_PRCNT_n,vd_optum_p,rd_CNT_PRCNT_Y,rd_CNT_PRCNT_n,rd_optum_p,
+vrd_CNT_PRCNT_Y,vrd_CNT_PRCNT_n,vrd_optum_p,
+                   vcd_CNT_PRCNT_Y,vcd_CNT_PRCNT_n,vcd_optum_p,vmp_CNT_PRCNT_Y,vmp_CNT_PRCNT_n,vmp_optum_p,
+                           other_CNT_PRCNT_Y,other_CNT_PRCNT_n,other_optum_p,overall_CNT_PRCNT_Y,overall_CNT_PRCNT_n 
+						   ,overall_optum_p
+                   
+              from all_elix_optum as a
+			  left join 
+			  all_pval as b
+			  on compress(lowcase(a.commor))=compress(lowcase(b.category));
+
+quit;
+
+
+
+Data all_optum1;
+set all_optum1;
+if     lowcase(commor)='chf'       then     ord=1;
+if     lowcase(commor)='arr'       then     ord=2;
+if     lowcase(commor)='valv'       then     ord=3;
+if     lowcase(commor)='pulm'       then     ord=4;
+if     lowcase(commor)='vasc'       then     ord=5;
+if     lowcase(commor)='hypersimp'       then     ord=6;
+if     lowcase(commor)='hypercomp'       then     ord=7;
+if     lowcase(commor)='para'       then     ord=8;
+if     lowcase(commor)='neur'       then     ord=9;
+if     lowcase(commor)='cpd'       then     ord=10;
+if     lowcase(commor)='diabsimp'       then     ord=11;
+if     lowcase(commor)='diabcomp'       then     ord=12;
+if     lowcase(commor)='hypo'       then     ord=13;
+if     lowcase(commor)='renal'       then     ord=14;
+if     lowcase(commor)='liver'       then     ord=15;
+if     lowcase(commor)='ulc'       then     ord=16;
+if     lowcase(commor)='aids'       then     ord=17;
+if     lowcase(commor)='lymph'       then     ord=18;
+if     lowcase(commor)='metacan'       then     ord=19;
+if     lowcase(commor)='tumor'       then     ord=20;
+if     lowcase(commor)='ra'       then     ord=21;
+if     lowcase(commor)='coag'       then     ord=22;
+if     lowcase(commor)='obes'       then     ord=23;
+if     lowcase(commor)='weightl'       then     ord=24;
+if     lowcase(commor)='fluid'       then     ord=25;
+if     lowcase(commor)='blanem'       then     ord=26;
+if     lowcase(commor)='defanem'       then     ord=27;
+if     lowcase(commor)='alc'       then     ord=28;
+if     lowcase(commor)='drugs'       then     ord=29;
+if     lowcase(commor)='psych'       then     ord=30;
+if     lowcase(commor)='dep'       then     ord=31;
+if     lowcase(commor)='any'       then     ord=32;
+if     lowcase(commor)='hyperany'       then     ord=33;
+if     lowcase(commor)='diabany'       then     ord=34;
+
+if vd_CNT_PRCNT_Y="" and vd_CNT_PRCNT_n="" then do;
+vd_optum_p="NA";
+vd_CNT_PRCNT_Y="0 (0.0%)";
+vd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if rd_CNT_PRCNT_Y="" and rd_CNT_PRCNT_n = "" then do;
+rd_optum_p ="NA";
+rd_CNT_PRCNT_Y="0 (0.0%)";
+rd_CNT_PRCNT_n ="0 (0.0%)";
+end;
+if vrd_CNT_PRCNT_y="" and vrd_CNT_PRCNT_n="" then do;
+vrd_optum_p="NA";
+vrd_CNT_PRCNT_y="0 (0.0%)";
+vrd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if vcd_CNT_PRCNT_Y="" and vcd_CNT_PRCNT_n="" then do;
+vcd_optum_p="NA";
+vcd_CNT_PRCNT_Y="0 (0.0%)";
+vcd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if vmp_CNT_PRCNT_Y="" and vmp_CNT_PRCNT_n="" then do
+vmp_optum_p="NA" ;
+vmp_CNT_PRCNT_Y="0 (0.0%)";
+vmp_CNT_PRCNT_n="0 (0.0%)";
+end;
+if other_CNT_PRCNT_Y="" and other_CNT_PRCNT_n="" then do;
+other_optum_p="NA";
+other_CNT_PRCNT_Y="0 (0.0%)";
+other_CNT_PRCNT_n="0 (0.0%)";
+end;
+if overall_CNT_PRCNT_Y="" and overall_CNT_PRCNT_n="" then do;
+overall_optum_p ="NA";
+overall_CNT_PRCNT_Y="0 (0.0%)";
+overall_CNT_PRCNT_n="0 (0.0%)";
+end;
+
+run;
+
+Proc sort data=all_optum1 out=all_optum(drop=database ord);
+by ord;
+run;
+
+Data all_optum(drop=i);
+set all_optum;
+array char $ _character_;
+do i=1 to dim(char);
+if char{i}="" then char{i}="0 (0.0%)";
+end;
+run;
+
+
+proc export data=all_optum outfile="E:\Projects\Janssen\MM pneumonia - 14149\Database\Tables\all_optum_elix.csv"
+dbms=csv replace;
+run;
+
+Proc sql;
+create table  all_oldoptum1
+as select database, commor,vd_CNT_PRCNT_Y,vd_CNT_PRCNT_n,vd_oldoptum_p,rd_CNT_PRCNT_Y,rd_CNT_PRCNT_n,rd_oldoptum_p,
+vrd_CNT_PRCNT_Y,vrd_CNT_PRCNT_n,vrd_oldoptum_p,
+                   vcd_CNT_PRCNT_Y,vcd_CNT_PRCNT_n,vcd_oldoptum_p,vmp_CNT_PRCNT_Y,vmp_CNT_PRCNT_n,vmp_oldoptum_p,
+                           other_CNT_PRCNT_Y,other_CNT_PRCNT_n,other_oldoptum_p,overall_CNT_PRCNT_Y,overall_CNT_PRCNT_n 
+						   ,overall_oldoptum_p 
+                   
+              from all_elix_oldoptum as a
+			  left join 
+			  all_pval as b
+			  on compress(lowcase(a.commor))=compress(lowcase(b.category));
+
+quit;
+
+
+
+
+Data all_oldoptum1;
+set all_oldoptum1;
+if     lowcase(commor)='chf'       then     ord=1;
+if     lowcase(commor)='arr'       then     ord=2;
+if     lowcase(commor)='valv'       then     ord=3;
+if     lowcase(commor)='pulm'       then     ord=4;
+if     lowcase(commor)='vasc'       then     ord=5;
+if     lowcase(commor)='hypersimp'       then     ord=6;
+if     lowcase(commor)='hypercomp'       then     ord=7;
+if     lowcase(commor)='para'       then     ord=8;
+if     lowcase(commor)='neur'       then     ord=9;
+if     lowcase(commor)='cpd'       then     ord=10;
+if     lowcase(commor)='diabsimp'       then     ord=11;
+if     lowcase(commor)='diabcomp'       then     ord=12;
+if     lowcase(commor)='hypo'       then     ord=13;
+if     lowcase(commor)='renal'       then     ord=14;
+if     lowcase(commor)='liver'       then     ord=15;
+if     lowcase(commor)='ulc'       then     ord=16;
+if     lowcase(commor)='aids'       then     ord=17;
+if     lowcase(commor)='lymph'       then     ord=18;
+if     lowcase(commor)='metacan'       then     ord=19;
+if     lowcase(commor)='tumor'       then     ord=20;
+if     lowcase(commor)='ra'       then     ord=21;
+if     lowcase(commor)='coag'       then     ord=22;
+if     lowcase(commor)='obes'       then     ord=23;
+if     lowcase(commor)='weightl'       then     ord=24;
+if     lowcase(commor)='fluid'       then     ord=25;
+if     lowcase(commor)='blanem'       then     ord=26;
+if     lowcase(commor)='defanem'       then     ord=27;
+if     lowcase(commor)='alc'       then     ord=28;
+if     lowcase(commor)='drugs'       then     ord=29;
+if     lowcase(commor)='psych'       then     ord=30;
+if     lowcase(commor)='dep'       then     ord=31;
+if     lowcase(commor)='any'       then     ord=32;
+if     lowcase(commor)='hyperany'       then     ord=33;
+if     lowcase(commor)='diabany'       then     ord=34;
+
+if vd_CNT_PRCNT_Y="" and vd_CNT_PRCNT_n="" then do;
+vd_oldoptum_p="NA";
+vd_CNT_PRCNT_Y="0 (0.0%)";
+vd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if rd_CNT_PRCNT_Y="" and rd_CNT_PRCNT_n = "" then do;
+rd_oldoptum_p ="NA";
+rd_CNT_PRCNT_Y="0 (0.0%)";
+rd_CNT_PRCNT_n ="0 (0.0%)";
+end;
+if vrd_CNT_PRCNT_y="" and vrd_CNT_PRCNT_n="" then do;
+vrd_oldoptum_p="NA";
+vrd_CNT_PRCNT_y="0 (0.0%)";
+vrd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if vcd_CNT_PRCNT_Y="" and vcd_CNT_PRCNT_n="" then do;
+vcd_oldoptum_p="NA";
+vcd_CNT_PRCNT_Y="0 (0.0%)";
+vcd_CNT_PRCNT_n="0 (0.0%)";
+end;
+if vmp_CNT_PRCNT_Y="" and vmp_CNT_PRCNT_n="" then do
+vmp_oldoptum_p="NA" ;
+vmp_CNT_PRCNT_Y="0 (0.0%)";
+vmp_CNT_PRCNT_n="0 (0.0%)";
+end;
+if other_CNT_PRCNT_Y="" and other_CNT_PRCNT_n="" then do;
+other_oldoptum_p="NA";
+other_CNT_PRCNT_Y="0 (0.0%)";
+other_CNT_PRCNT_n="0 (0.0%)";
+end;
+if overall_CNT_PRCNT_Y="" and overall_CNT_PRCNT_n="" then do;
+overall_oldoptum_p ="NA";
+overall_CNT_PRCNT_Y="0 (0.0%)";
+overall_CNT_PRCNT_n="0 (0.0%)";
+end;
+
+run;
+
+Proc sort data=all_oldoptum1 out=all_oldoptum(drop=database ord);
+by ord;
+run;
+
+Data all_oldoptum(drop=i);
+set all_oldoptum;
+array char $ _character_;
+do i=1 to dim(char);
+if char{i}="" then char{i}="0 (0.0%)";
+end;
+run;
+
+proc export data=all_oldoptum outfile="E:\Projects\Janssen\MM pneumonia - 14149\Database\Tables\all_oldoptum_elix.csv"
+dbms=csv replace;
+run;
+

@@ -1,0 +1,452 @@
+Libname anal "E:\Projects\Janssen\MM pneumonia - 14149\Database\Analysis Data";
+
+Data xx;
+set anal.Reg_codes_final_31may;
+where lot =1;
+if sex="M" then sex=1;
+else if sex ="F" then sex =2;
+else sex=3;
+overall="Y";
+run;
+
+%macro demo (cat=);
+
+Proc freq data=xx;
+tables database*sex/out=&cat._sex_y outpct;
+tables database*age_new/out=&cat._age_y outpct;
+where &cat. ="Y" and PNEU_DIAG1="Y";
+run;
+
+Data &cat._sex_y1(rename =(sex=cat));
+set &cat._sex_y;
+stat=cat( compress(put(count, 8.)), " (", compress(put(pct_row,8.1)),"%", ")");
+keep database sex stat;
+run;
+
+
+Data &cat._age_y1(rename =(age_new=cat));
+set &cat._AGE_y;
+stat=cat( compress(put(count, 8.)), " (", compress(put(pct_row,8.1)),"%", ")");
+keep database age_new stat;
+run;
+
+
+
+Proc means data=xx n mean median q1 q3 min max std;
+output out=&cat._stat_y(where =(_type_=1)) n=n mean=mean median=median q1=q1 q3=q3 min=min max=max std=std;
+class database;
+var age;
+where &cat. ="Y" and PNEU_DIAG1="Y";
+run;
+
+/*cat( compress(put(failed_Y_OS, comma8.)), " (", compress(put(failed_Y_OS/total_Y_OS,percent8.1)), ")") */
+
+Proc sql;
+create table &cat._stat1_y as 
+select "Count" as cat,database,cat(compress(put(N,8.)), "")  as stat from &cat._stat_y 
+union all
+select "Mean_sd" as cat,database ,cat( compress(put(mean, 8.1)), " (", compress(put(std,8.2)), ")") as stat
+from &cat._stat_y
+union all
+select "Med_iqr" as cat,database ,cat( compress(put(median, 8.1)), " (", compress(put(q1,8.1)),"-",compress(put(q3,8.1)), ")") as stat
+from &cat._stat_y
+union all
+select "Min_MAx" as cat,database ,cat( compress(put(min, 8.1)), ", ", compress(put(max,8.1))) as stat
+from &cat._stat_y;
+quit;
+
+Data &cat._all_y;
+length cat $30.;
+set &cat._sex_y1 &cat._age_y1 &cat._stat1_y ;
+if cat=1 then cat="M";
+else if cat=2 then   cat="F";
+else if cat =3 then cat="U";
+rename stat=stat_Y;
+n=_n_;
+run;
+
+
+Proc freq data=xx;
+tables database*sex/out=&cat._sex_n outpct;
+tables database*age_new/out=&cat._age_n outpct;
+where &cat. ="Y" and PNEU_DIAG1="N";
+run;
+
+
+Data &cat._sex_n1(rename =(sex=cat));
+set &cat._sex_n;
+stat=cat( compress(put(count, 8.)), " (", compress(put(pct_row,8.1)),"%", ")");
+keep database sex  stat;
+run;
+
+
+Data &cat._age_n1(rename =(age_new=cat));
+set &cat._AGE_n;
+stat=cat( compress(put(count, 8.)), " (", compress(put(pct_row,8.1)),"%", ")");
+keep database age_new stat;
+run;
+
+
+Proc means data=xx n mean median q1 q3 min max std;
+output out=&cat._stat_n(where =(_type_=1)) n=n mean=mean median=median q1=q1 q3=q3 min=min max=max std=std;
+class database;
+var age;
+where &cat. ="Y" and PNEU_DIAG1="N";
+run;
+
+/*cat( compress(put(failed_Y_OS, comma8.)), " (", compress(put(failed_Y_OS/total_Y_OS,percent8.1)), ")") */
+
+Proc sql;
+create table &cat._stat1_n as 
+select "Count" as cat,database,cat(compress(put(N,8.)), "")  as stat from &cat._stat_n 
+union all
+select "Mean_sd" as cat,database ,cat( compress(put(mean, 8.1)), " (", compress(put(std,8.2)), ")") as stat
+from &cat._stat_n
+union all
+select "Med_iqr" as cat,database ,cat( compress(put(median, 8.1)), " (", compress(put(q1,8.1)),"-",compress(put(q3,8.1)), ")") as stat
+from &cat._stat_n
+union all
+select "Min_MAx" as cat,database ,cat( compress(put(min, 8.1)), ", ", compress(put(max,8.1))) as stat
+from &cat._stat_n;
+quit;
+
+
+Data &cat._all_n;
+length cat $30.;
+set &cat._sex_n1 &cat._age_n1 &cat._stat1_n ;
+if cat=1 then cat="M";
+else if cat=2 then   cat="F";
+else if cat =3 then cat="U";
+rename  stat=stat_n;
+run;
+
+/*Proc sort data=&cat._all_y;*/
+/*by  cat  database;*/
+/*run;*/
+/**/
+/*Proc sort data=&cat._all_n;*/
+/*by  cat  database;*/
+/*run;*/
+/**/
+/*Data all_obs_&cat.(rename=(stat_y=stat_y_&cat. stat_n=stat_n_&cat.));*/
+/*merge &cat._all_y &cat._all_n ;*/
+/*by cat  database;*/
+/*run;*/
+
+Proc sql;
+create table all_obs_&cat. as select 
+a.database,a.cat,a.stat_n as stat_n_&cat.,b.stat_y as stat_y_&cat.
+from &cat._all_n as a 
+left join 
+&cat._all_y as b
+on compress(lowcase(a.cat))=compress(lowcase(b.cat)) and compress(lowcase(a.database))=compress(lowcase(b.database))
+;
+quit;
+
+Data all_obs_&cat.;
+set all_obs_&cat.;
+if cat = "M" then new_cat="1";
+if cat = "F" then new_cat="2";
+if cat = "U" then new_cat="3";
+if cat = "<65" then new_cat="4";
+if cat = ">=65" then new_cat="5";
+if cat = "Count" then new_cat="6";
+if cat = "Mean_sd" then new_cat="7";
+if cat = "Med_iqr" then new_cat="8";
+if cat = "Min_MAx" then new_cat="9";
+
+Proc sort data=all_obs_&cat.;
+by new_cat;
+run;
+
+%mend;
+
+
+%demo(cat=VD);
+%demo(cat=RD);
+%demo(cat=VRD);
+%demo(cat=VCD);
+%demo(cat=VMP);
+%demo(cat=Other);
+%demo(cat=overall);
+
+
+Data all_demo_medicare;
+merge all_obs_:;
+by new_cat;
+where database="Medicare";
+run;
+
+Proc sql;
+create table  all_demo_Medicare
+as select cat, stat_y_vd,stat_n_vd,stat_y_rd,stat_n_rd,stat_y_vrd,stat_n_vrd,stat_y_vcd,stat_n_vcd,
+          stat_y_vmp,stat_n_vmp,stat_y_other,stat_n_other,stat_y_overall,stat_n_overall 
+              from all_demo_Medicare;
+quit;
+
+Data all_demo_Medicare;
+set all_demo_Medicare;
+ord=_n_;
+run;
+
+
+Data all_demo_optum;
+merge all_obs_:;
+by new_cat;
+where database="Optum";
+run;
+
+Proc sql;
+create table  all_demo_optum
+as select cat,stat_y_vd,stat_n_vd,stat_y_rd,stat_n_rd,stat_y_vrd,stat_n_vrd,stat_y_vcd,stat_n_vcd,
+          stat_y_vmp,stat_n_vmp,stat_y_other,stat_n_other,stat_y_overall,stat_n_overall 
+              from all_demo_optum;
+quit;
+
+Data all_demo_optum;
+set all_demo_optum;
+ord=_n_;
+run;
+
+
+Data all_demo_old_optum;
+merge all_obs_:;
+by new_cat;
+where database="Old Optum";
+run;
+
+Proc sql;
+create table  all_demo_old_optum
+as select cat,stat_y_vd,stat_n_vd,stat_y_rd,stat_n_rd,stat_y_vrd,stat_n_vrd,stat_y_vcd,stat_n_vcd,
+          stat_y_vmp,stat_n_vmp,stat_y_other,stat_n_other,stat_y_overall,stat_n_overall 
+              from all_demo_old_optum;
+quit;
+
+Data all_demo_old_optum;
+set all_demo_old_optum;
+ord=_n_;
+run;
+
+
+/*P value calculation */
+
+%macro Trt(Trt=,var2=);
+
+data with_Elix;
+	set anal.Reg_codes_final_31may;
+where database="&var2." and lot=1;
+	Overall = 'Y';
+run;
+
+Data anal_1;
+Format Category $100.;
+run;
+
+%macro Freq (Var1);
+
+data with_elix_1;
+	set with_elix;
+	if &var1. = Sex then do;
+		if sex = 'U' then delete;
+	end;
+run;
+
+Proc freq data=with_elix_1;
+table &Var1.*pneu_diag1/ out = D1;
+where &Trt. = 'Y';
+run;
+
+Proc freq data=with_elix_1;
+table &Var1.*pneu_diag1/ out = P1 ;
+where &Trt. = 'Y';
+run;
+
+Proc sort data=D1; by &Var1.; run;
+
+Proc transpose data=D1 out = D2 (rename = (&var1. = Category));
+By &Var1.;
+Var count;
+id pneu_diag1;
+run;
+
+Data D5;
+format category $20.;
+Category = " &var1." ;
+run;
+
+data d2 (drop=category rename=(d21=category));
+	set d2;
+d21 = put(category,20.);
+run;
+
+Data anal_&var1.;
+Set D5 D2 ;
+run;
+
+*pvalue by Pearson Chi-square;
+
+Proc freq data=with_elix_1;
+table &Var1.*pneu_diag1/Chisq;
+Output out = P1_&Var1. MHCHI FISHER;
+where &Trt. = 'Y';
+run;
+
+Data P2_&Var1.;
+Format Category $100.;
+set P1_&Var1.;
+Category = " &var1." ;
+drop _MHCHI_ DF_MHCHI XPL_FISH XPR_FISH;
+run;
+
+proc sort data=anal_&var1.  ;
+by category;
+run;
+
+proc sort data=P2_&var1.  ;
+by category;
+run;
+
+Data Anal_11_&var1.;
+merge anal_&var1. P2_&var1.;
+by Category;
+run;
+
+data Anal_11_&var1.;
+	set Anal_11_&var1.;
+format p_mhchi 8.4;
+run;
+
+data anal_1 ;
+set anal_1 Anal_11_&var1.;
+run;
+
+%mend;
+/*CHF ARR VALV PULM VASC HYPERSIMP HYPERCOMP PARA NEUR CPD DIABSIMP DIABCOMP HYPO */
+/*RENAL LIVER ULC AIDS LYMPH METACAN TUMOR RA COAG OBES WEIGHTL FLUID BLANEM DEFANEM ALC */
+/*DRUGS PSYCH DEP NUM_ANY ANY HYPERANY DIABANY*/
+
+
+%Freq(Var1 = Sex);
+%Freq(Var1 = Age_new);
+%Freq(Var1 = Prior_Asthma);
+%Freq(Var1 = Prior_COPD);
+%Freq(Var1 = Prior_Resp);
+
+Data anal_1;
+	set anal_1;
+if compress(category) ne "0";
+run;
+
+
+%let var3=%sysfunc(compress(&var2.));
+
+Data anal_pval_&trt._&var3.(drop= XP2_FISH rename=(XP2_FISH2=&trt._&var3._p));
+	set anal_1;
+where compress(lowcase(category))  in ("age_new","sex");
+XP2_FISH1=compress(put(XP2_FISH,8.4));
+if XP2_FISH1 ="1.0000" then XP2_FISH2=">.9999";
+else if XP2_FISH1="0.0000" then  XP2_FISH2="<.0001";
+else XP2_FISH2=XP2_FISH1;
+category=compress(lowcase(category));
+keep category XP2_FISH XP2_FISH2;
+run;
+
+Proc sort data=anal_pval_&trt._&var3.;
+by category;
+run;
+
+Data anal_pval_&trt._&var3.;
+set anal_pval_&trt._&var3.;
+if category="age_new" then category="<65";
+if category="sex" then category="M";
+run;
+
+%mend;
+
+
+%Trt(Trt = Vd,var2=Medicare);
+%Trt(Trt = Rd,var2=Medicare);
+%Trt(Trt = Vrd,var2=Medicare);
+%Trt(Trt = Vcd,var2=Medicare);
+%Trt(Trt = VMP,var2=Medicare);
+%Trt(Trt = Other,var2=Medicare);
+%Trt(Trt = Overall,var2=Medicare);
+
+%Trt(Trt = Vd,var2=Old Optum);
+%Trt(Trt = Rd,var2=Old Optum);
+%Trt(Trt = Vrd,var2=Old Optum);
+%Trt(Trt = Vcd,var2=Old Optum);
+%Trt(Trt = VMP,var2=Old Optum);
+%Trt(Trt = Other,var2=Old Optum);
+%Trt(Trt = Overall,var2=OldOptum);
+
+
+%Trt(Trt = Vd,var2=Optum);
+%Trt(Trt = Rd,var2=Optum);
+%Trt(Trt = Vrd,var2=Optum);
+%Trt(Trt = Vcd,var2=Optum);
+%Trt(Trt = VMP,var2=Optum);
+%Trt(Trt = Other,var2=Optum);
+%Trt(Trt = Overall,var2=Optum);
+
+
+
+Data all_pval;
+merge anal_pval_:;
+by category;
+run;
+
+
+
+Proc sql;
+create table  medicare_demo
+as select cat, stat_y_vd,stat_n_vd,vd_medicare_p,stat_y_rd,stat_n_rd,rd_medicare_p,stat_y_vrd,stat_n_vrd,vrd_medicare_p,
+stat_y_vcd,stat_n_vcd,vcd_medicare_p,stat_y_vmp,stat_n_vmp,vmp_medicare_p,stat_y_other,stat_n_other,other_medicare_p,
+stat_y_overall,stat_n_overall,overall_medicare_p
+from all_demo_Medicare as a
+left join
+all_pval as b
+on compress(lowcase(a.cat))= compress(lowcase(b.category))
+order by ord;
+quit;
+
+proc export data=medicare_demo outfile="E:\Projects\Janssen\MM pneumonia - 14149\Database\Tables\medicare_demo.csv"
+dbms=csv replace;
+run;
+
+
+Proc sql;
+create table  optum_demo
+as select cat, stat_y_vd,stat_n_vd,vd_optum_p,stat_y_rd,stat_n_rd,rd_optum_p,stat_y_vrd,stat_n_vrd,vrd_optum_p,
+stat_y_vcd,stat_n_vcd,vcd_optum_p,stat_y_vmp,stat_n_vmp,vmp_optum_p,stat_y_other,stat_n_other,other_optum_p,
+stat_y_overall,stat_n_overall,overall_optum_p
+from all_demo_optum as a
+left join 
+all_pval as b
+on compress(lowcase(a.cat))= compress(lowcase(b.category))
+order by ord;
+quit;
+
+
+
+proc export data=optum_demo outfile="E:\Projects\Janssen\MM pneumonia - 14149\Database\Tables\optum_demo.csv"
+dbms=csv replace;
+run;
+
+
+Proc sql;
+create table  oldoptum_demo
+as select cat, stat_y_vd,stat_n_vd,vd_oldoptum_p,stat_y_rd,stat_n_rd,rd_oldoptum_p,stat_y_vrd,stat_n_vrd,vrd_oldoptum_p,
+stat_y_vcd,stat_n_vcd,vcd_oldoptum_p,stat_y_vmp,stat_n_vmp,vmp_oldoptum_p,stat_y_other,stat_n_other,other_oldoptum_p,
+stat_y_overall,stat_n_overall,overall_oldoptum_p
+from all_demo_old_optum as a
+left join
+all_pval as b
+on compress(lowcase(a.cat))= compress(lowcase(b.category))
+order by ord;
+quit;
+
+
+proc export data=oldoptum_demo outfile="E:\Projects\Janssen\MM pneumonia - 14149\Database\Tables\oldoptum_demo.csv"
+dbms=csv replace;
+run;
